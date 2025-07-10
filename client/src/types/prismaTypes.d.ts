@@ -4,6 +4,7 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+
 /**
  * Client
  **/
@@ -194,7 +195,7 @@ export class PrismaClient<
     callback: (
       event: V extends 'query' ? Prisma.QueryEvent : Prisma.LogEvent
     ) => void
-  ): void;
+  ): PrismaClient;
 
   /**
    * Connect with the database
@@ -302,15 +303,14 @@ export class PrismaClient<
 
   $extends: $Extensions.ExtendsHook<
     'extends',
-    Prisma.TypeMapCb,
+    Prisma.TypeMapCb<ClientOptions>,
     ExtArgs,
     $Utils.Call<
-      Prisma.TypeMapCb,
+      Prisma.TypeMapCb<ClientOptions>,
       {
         extArgs: ExtArgs;
       }
-    >,
-    ClientOptions
+    >
   >;
 
   /**
@@ -438,8 +438,8 @@ export namespace Prisma {
   export import Exact = $Public.Exact;
 
   /**
-   * Prisma Client JS version: 6.3.0
-   * Query Engine version: acc0b9dd43eb689cbd20c9470515d719db10d0b0
+   * Prisma Client JS version: 6.11.1
+   * Query Engine version: f40f79ec31188888a2e33acda0ecc8fd10a853a9
    */
   export type PrismaVersion = {
     client: string;
@@ -720,7 +720,7 @@ export namespace Prisma {
     O extends unknown
       ?
           | (K extends keyof O ? { [P in K]: O[P] } & O : O)
-          | ({ [P in keyof O as P extends K ? K : never]-?: O[P] } & O)
+          | ({ [P in keyof O as P extends K ? P : never]-?: O[P] } & O)
       : never
   >;
 
@@ -857,21 +857,24 @@ export namespace Prisma {
     db?: Datasource;
   };
 
-  interface TypeMapCb
+  interface TypeMapCb<ClientOptions = {}>
     extends $Utils.Fn<
-      { extArgs: $Extensions.InternalArgs; clientOptions: PrismaClientOptions },
+      { extArgs: $Extensions.InternalArgs },
       $Utils.Record<string, any>
     > {
     returns: Prisma.TypeMap<
       this['params']['extArgs'],
-      this['params']['clientOptions']
+      ClientOptions extends { omit: infer OmitOptions } ? OmitOptions : {}
     >;
   }
 
   export type TypeMap<
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > = {
+    globalOmitOptions: {
+      omit: GlobalOmitOptions;
+    };
     meta: {
       modelProps:
         | 'property'
@@ -2377,7 +2380,7 @@ export namespace Prisma {
 
   export interface PropertyDelegate<
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > {
     [K: symbol]: {
       types: Prisma.TypeMap<ExtArgs>['model']['Property'];
@@ -2401,11 +2404,11 @@ export namespace Prisma {
         Prisma.$PropertyPayload<ExtArgs>,
         T,
         'findUnique',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -2427,11 +2430,11 @@ export namespace Prisma {
         Prisma.$PropertyPayload<ExtArgs>,
         T,
         'findUniqueOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -2454,11 +2457,11 @@ export namespace Prisma {
         Prisma.$PropertyPayload<ExtArgs>,
         T,
         'findFirst',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -2482,11 +2485,11 @@ export namespace Prisma {
         Prisma.$PropertyPayload<ExtArgs>,
         T,
         'findFirstOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -2512,7 +2515,7 @@ export namespace Prisma {
         Prisma.$PropertyPayload<ExtArgs>,
         T,
         'findMany',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -2535,11 +2538,11 @@ export namespace Prisma {
         Prisma.$PropertyPayload<ExtArgs>,
         T,
         'create',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -2587,7 +2590,7 @@ export namespace Prisma {
         Prisma.$PropertyPayload<ExtArgs>,
         T,
         'createManyAndReturn',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -2610,11 +2613,11 @@ export namespace Prisma {
         Prisma.$PropertyPayload<ExtArgs>,
         T,
         'delete',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -2639,11 +2642,11 @@ export namespace Prisma {
         Prisma.$PropertyPayload<ExtArgs>,
         T,
         'update',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -2718,7 +2721,7 @@ export namespace Prisma {
         Prisma.$PropertyPayload<ExtArgs>,
         T,
         'updateManyAndReturn',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -2746,11 +2749,11 @@ export namespace Prisma {
         Prisma.$PropertyPayload<ExtArgs>,
         T,
         'upsert',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -2902,7 +2905,7 @@ export namespace Prisma {
     T,
     Null = never,
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: 'PrismaPromise';
     location<T extends LocationDefaultArgs<ExtArgs> = {}>(
@@ -2912,12 +2915,12 @@ export namespace Prisma {
           Prisma.$LocationPayload<ExtArgs>,
           T,
           'findUniqueOrThrow',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null,
       Null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
     manager<T extends ManagerDefaultArgs<ExtArgs> = {}>(
       args?: Subset<T, ManagerDefaultArgs<ExtArgs>>
@@ -2926,12 +2929,12 @@ export namespace Prisma {
           Prisma.$ManagerPayload<ExtArgs>,
           T,
           'findUniqueOrThrow',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null,
       Null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
     leases<T extends Property$leasesArgs<ExtArgs> = {}>(
       args?: Subset<T, Property$leasesArgs<ExtArgs>>
@@ -2940,7 +2943,7 @@ export namespace Prisma {
           Prisma.$LeasePayload<ExtArgs>,
           T,
           'findMany',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null
     >;
@@ -2951,7 +2954,7 @@ export namespace Prisma {
           Prisma.$ApplicationPayload<ExtArgs>,
           T,
           'findMany',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null
     >;
@@ -2962,7 +2965,7 @@ export namespace Prisma {
           Prisma.$TenantPayload<ExtArgs>,
           T,
           'findMany',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null
     >;
@@ -2973,7 +2976,7 @@ export namespace Prisma {
           Prisma.$TenantPayload<ExtArgs>,
           T,
           'findMany',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null
     >;
@@ -3892,7 +3895,7 @@ export namespace Prisma {
 
   export interface ManagerDelegate<
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > {
     [K: symbol]: {
       types: Prisma.TypeMap<ExtArgs>['model']['Manager'];
@@ -3916,11 +3919,11 @@ export namespace Prisma {
         Prisma.$ManagerPayload<ExtArgs>,
         T,
         'findUnique',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -3942,11 +3945,11 @@ export namespace Prisma {
         Prisma.$ManagerPayload<ExtArgs>,
         T,
         'findUniqueOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -3969,11 +3972,11 @@ export namespace Prisma {
         Prisma.$ManagerPayload<ExtArgs>,
         T,
         'findFirst',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -3997,11 +4000,11 @@ export namespace Prisma {
         Prisma.$ManagerPayload<ExtArgs>,
         T,
         'findFirstOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -4027,7 +4030,7 @@ export namespace Prisma {
         Prisma.$ManagerPayload<ExtArgs>,
         T,
         'findMany',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -4050,11 +4053,11 @@ export namespace Prisma {
         Prisma.$ManagerPayload<ExtArgs>,
         T,
         'create',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -4102,7 +4105,7 @@ export namespace Prisma {
         Prisma.$ManagerPayload<ExtArgs>,
         T,
         'createManyAndReturn',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -4125,11 +4128,11 @@ export namespace Prisma {
         Prisma.$ManagerPayload<ExtArgs>,
         T,
         'delete',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -4154,11 +4157,11 @@ export namespace Prisma {
         Prisma.$ManagerPayload<ExtArgs>,
         T,
         'update',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -4233,7 +4236,7 @@ export namespace Prisma {
         Prisma.$ManagerPayload<ExtArgs>,
         T,
         'updateManyAndReturn',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -4261,11 +4264,11 @@ export namespace Prisma {
         Prisma.$ManagerPayload<ExtArgs>,
         T,
         'upsert',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -4417,7 +4420,7 @@ export namespace Prisma {
     T,
     Null = never,
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: 'PrismaPromise';
     managedProperties<T extends Manager$managedPropertiesArgs<ExtArgs> = {}>(
@@ -4427,7 +4430,7 @@ export namespace Prisma {
           Prisma.$PropertyPayload<ExtArgs>,
           T,
           'findMany',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null
     >;
@@ -5246,7 +5249,7 @@ export namespace Prisma {
 
   export interface TenantDelegate<
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > {
     [K: symbol]: {
       types: Prisma.TypeMap<ExtArgs>['model']['Tenant'];
@@ -5270,11 +5273,11 @@ export namespace Prisma {
         Prisma.$TenantPayload<ExtArgs>,
         T,
         'findUnique',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -5296,11 +5299,11 @@ export namespace Prisma {
         Prisma.$TenantPayload<ExtArgs>,
         T,
         'findUniqueOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -5323,11 +5326,11 @@ export namespace Prisma {
         Prisma.$TenantPayload<ExtArgs>,
         T,
         'findFirst',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -5351,11 +5354,11 @@ export namespace Prisma {
         Prisma.$TenantPayload<ExtArgs>,
         T,
         'findFirstOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -5381,7 +5384,7 @@ export namespace Prisma {
         Prisma.$TenantPayload<ExtArgs>,
         T,
         'findMany',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -5404,11 +5407,11 @@ export namespace Prisma {
         Prisma.$TenantPayload<ExtArgs>,
         T,
         'create',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -5456,7 +5459,7 @@ export namespace Prisma {
         Prisma.$TenantPayload<ExtArgs>,
         T,
         'createManyAndReturn',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -5479,11 +5482,11 @@ export namespace Prisma {
         Prisma.$TenantPayload<ExtArgs>,
         T,
         'delete',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -5508,11 +5511,11 @@ export namespace Prisma {
         Prisma.$TenantPayload<ExtArgs>,
         T,
         'update',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -5587,7 +5590,7 @@ export namespace Prisma {
         Prisma.$TenantPayload<ExtArgs>,
         T,
         'updateManyAndReturn',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -5615,11 +5618,11 @@ export namespace Prisma {
         Prisma.$TenantPayload<ExtArgs>,
         T,
         'upsert',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -5771,7 +5774,7 @@ export namespace Prisma {
     T,
     Null = never,
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: 'PrismaPromise';
     properties<T extends Tenant$propertiesArgs<ExtArgs> = {}>(
@@ -5781,7 +5784,7 @@ export namespace Prisma {
           Prisma.$PropertyPayload<ExtArgs>,
           T,
           'findMany',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null
     >;
@@ -5792,7 +5795,7 @@ export namespace Prisma {
           Prisma.$PropertyPayload<ExtArgs>,
           T,
           'findMany',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null
     >;
@@ -5803,7 +5806,7 @@ export namespace Prisma {
           Prisma.$ApplicationPayload<ExtArgs>,
           T,
           'findMany',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null
     >;
@@ -5814,7 +5817,7 @@ export namespace Prisma {
           Prisma.$LeasePayload<ExtArgs>,
           T,
           'findMany',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null
     >;
@@ -6697,7 +6700,7 @@ export namespace Prisma {
 
   export interface LocationDelegate<
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > {
     [K: symbol]: {
       types: Prisma.TypeMap<ExtArgs>['model']['Location'];
@@ -6721,11 +6724,11 @@ export namespace Prisma {
         Prisma.$LocationPayload<ExtArgs>,
         T,
         'findUnique',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -6747,11 +6750,11 @@ export namespace Prisma {
         Prisma.$LocationPayload<ExtArgs>,
         T,
         'findUniqueOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -6774,11 +6777,11 @@ export namespace Prisma {
         Prisma.$LocationPayload<ExtArgs>,
         T,
         'findFirst',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -6802,11 +6805,11 @@ export namespace Prisma {
         Prisma.$LocationPayload<ExtArgs>,
         T,
         'findFirstOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -6832,7 +6835,7 @@ export namespace Prisma {
         Prisma.$LocationPayload<ExtArgs>,
         T,
         'findMany',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -6855,11 +6858,11 @@ export namespace Prisma {
         Prisma.$LocationPayload<ExtArgs>,
         T,
         'delete',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -6884,11 +6887,11 @@ export namespace Prisma {
         Prisma.$LocationPayload<ExtArgs>,
         T,
         'update',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -6963,7 +6966,7 @@ export namespace Prisma {
         Prisma.$LocationPayload<ExtArgs>,
         T,
         'updateManyAndReturn',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -7116,7 +7119,7 @@ export namespace Prisma {
     T,
     Null = never,
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: 'PrismaPromise';
     properties<T extends Location$propertiesArgs<ExtArgs> = {}>(
@@ -7126,7 +7129,7 @@ export namespace Prisma {
           Prisma.$PropertyPayload<ExtArgs>,
           T,
           'findMany',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null
     >;
@@ -7955,7 +7958,7 @@ export namespace Prisma {
 
   export interface ApplicationDelegate<
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > {
     [K: symbol]: {
       types: Prisma.TypeMap<ExtArgs>['model']['Application'];
@@ -7979,11 +7982,11 @@ export namespace Prisma {
         Prisma.$ApplicationPayload<ExtArgs>,
         T,
         'findUnique',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -8005,11 +8008,11 @@ export namespace Prisma {
         Prisma.$ApplicationPayload<ExtArgs>,
         T,
         'findUniqueOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -8032,11 +8035,11 @@ export namespace Prisma {
         Prisma.$ApplicationPayload<ExtArgs>,
         T,
         'findFirst',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -8060,11 +8063,11 @@ export namespace Prisma {
         Prisma.$ApplicationPayload<ExtArgs>,
         T,
         'findFirstOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -8090,7 +8093,7 @@ export namespace Prisma {
         Prisma.$ApplicationPayload<ExtArgs>,
         T,
         'findMany',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -8113,11 +8116,11 @@ export namespace Prisma {
         Prisma.$ApplicationPayload<ExtArgs>,
         T,
         'create',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -8165,7 +8168,7 @@ export namespace Prisma {
         Prisma.$ApplicationPayload<ExtArgs>,
         T,
         'createManyAndReturn',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -8188,11 +8191,11 @@ export namespace Prisma {
         Prisma.$ApplicationPayload<ExtArgs>,
         T,
         'delete',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -8217,11 +8220,11 @@ export namespace Prisma {
         Prisma.$ApplicationPayload<ExtArgs>,
         T,
         'update',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -8296,7 +8299,7 @@ export namespace Prisma {
         Prisma.$ApplicationPayload<ExtArgs>,
         T,
         'updateManyAndReturn',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -8324,11 +8327,11 @@ export namespace Prisma {
         Prisma.$ApplicationPayload<ExtArgs>,
         T,
         'upsert',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -8481,7 +8484,7 @@ export namespace Prisma {
     T,
     Null = never,
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: 'PrismaPromise';
     property<T extends PropertyDefaultArgs<ExtArgs> = {}>(
@@ -8491,12 +8494,12 @@ export namespace Prisma {
           Prisma.$PropertyPayload<ExtArgs>,
           T,
           'findUniqueOrThrow',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null,
       Null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
     tenant<T extends TenantDefaultArgs<ExtArgs> = {}>(
       args?: Subset<T, TenantDefaultArgs<ExtArgs>>
@@ -8505,12 +8508,12 @@ export namespace Prisma {
           Prisma.$TenantPayload<ExtArgs>,
           T,
           'findUniqueOrThrow',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null,
       Null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
     lease<T extends Application$leaseArgs<ExtArgs> = {}>(
       args?: Subset<T, Application$leaseArgs<ExtArgs>>
@@ -8519,11 +8522,11 @@ export namespace Prisma {
         Prisma.$LeasePayload<ExtArgs>,
         T,
         'findUniqueOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -9404,7 +9407,7 @@ export namespace Prisma {
 
   export interface LeaseDelegate<
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > {
     [K: symbol]: {
       types: Prisma.TypeMap<ExtArgs>['model']['Lease'];
@@ -9428,11 +9431,11 @@ export namespace Prisma {
         Prisma.$LeasePayload<ExtArgs>,
         T,
         'findUnique',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -9454,11 +9457,11 @@ export namespace Prisma {
         Prisma.$LeasePayload<ExtArgs>,
         T,
         'findUniqueOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -9481,11 +9484,11 @@ export namespace Prisma {
         Prisma.$LeasePayload<ExtArgs>,
         T,
         'findFirst',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -9509,11 +9512,11 @@ export namespace Prisma {
         Prisma.$LeasePayload<ExtArgs>,
         T,
         'findFirstOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -9539,7 +9542,7 @@ export namespace Prisma {
         Prisma.$LeasePayload<ExtArgs>,
         T,
         'findMany',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -9562,11 +9565,11 @@ export namespace Prisma {
         Prisma.$LeasePayload<ExtArgs>,
         T,
         'create',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -9614,7 +9617,7 @@ export namespace Prisma {
         Prisma.$LeasePayload<ExtArgs>,
         T,
         'createManyAndReturn',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -9637,11 +9640,11 @@ export namespace Prisma {
         Prisma.$LeasePayload<ExtArgs>,
         T,
         'delete',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -9666,11 +9669,11 @@ export namespace Prisma {
         Prisma.$LeasePayload<ExtArgs>,
         T,
         'update',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -9745,7 +9748,7 @@ export namespace Prisma {
         Prisma.$LeasePayload<ExtArgs>,
         T,
         'updateManyAndReturn',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -9773,11 +9776,11 @@ export namespace Prisma {
         Prisma.$LeasePayload<ExtArgs>,
         T,
         'upsert',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -9929,7 +9932,7 @@ export namespace Prisma {
     T,
     Null = never,
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: 'PrismaPromise';
     property<T extends PropertyDefaultArgs<ExtArgs> = {}>(
@@ -9939,12 +9942,12 @@ export namespace Prisma {
           Prisma.$PropertyPayload<ExtArgs>,
           T,
           'findUniqueOrThrow',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null,
       Null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
     tenant<T extends TenantDefaultArgs<ExtArgs> = {}>(
       args?: Subset<T, TenantDefaultArgs<ExtArgs>>
@@ -9953,12 +9956,12 @@ export namespace Prisma {
           Prisma.$TenantPayload<ExtArgs>,
           T,
           'findUniqueOrThrow',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null,
       Null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
     application<T extends Lease$applicationArgs<ExtArgs> = {}>(
       args?: Subset<T, Lease$applicationArgs<ExtArgs>>
@@ -9967,11 +9970,11 @@ export namespace Prisma {
         Prisma.$ApplicationPayload<ExtArgs>,
         T,
         'findUniqueOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
     payments<T extends Lease$paymentsArgs<ExtArgs> = {}>(
       args?: Subset<T, Lease$paymentsArgs<ExtArgs>>
@@ -9980,7 +9983,7 @@ export namespace Prisma {
           Prisma.$PaymentPayload<ExtArgs>,
           T,
           'findMany',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null
     >;
@@ -10863,7 +10866,7 @@ export namespace Prisma {
 
   export interface PaymentDelegate<
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > {
     [K: symbol]: {
       types: Prisma.TypeMap<ExtArgs>['model']['Payment'];
@@ -10887,11 +10890,11 @@ export namespace Prisma {
         Prisma.$PaymentPayload<ExtArgs>,
         T,
         'findUnique',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -10913,11 +10916,11 @@ export namespace Prisma {
         Prisma.$PaymentPayload<ExtArgs>,
         T,
         'findUniqueOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -10940,11 +10943,11 @@ export namespace Prisma {
         Prisma.$PaymentPayload<ExtArgs>,
         T,
         'findFirst',
-        ClientOptions
+        GlobalOmitOptions
       > | null,
       null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -10968,11 +10971,11 @@ export namespace Prisma {
         Prisma.$PaymentPayload<ExtArgs>,
         T,
         'findFirstOrThrow',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -10998,7 +11001,7 @@ export namespace Prisma {
         Prisma.$PaymentPayload<ExtArgs>,
         T,
         'findMany',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -11021,11 +11024,11 @@ export namespace Prisma {
         Prisma.$PaymentPayload<ExtArgs>,
         T,
         'create',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -11073,7 +11076,7 @@ export namespace Prisma {
         Prisma.$PaymentPayload<ExtArgs>,
         T,
         'createManyAndReturn',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -11096,11 +11099,11 @@ export namespace Prisma {
         Prisma.$PaymentPayload<ExtArgs>,
         T,
         'delete',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -11125,11 +11128,11 @@ export namespace Prisma {
         Prisma.$PaymentPayload<ExtArgs>,
         T,
         'update',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -11204,7 +11207,7 @@ export namespace Prisma {
         Prisma.$PaymentPayload<ExtArgs>,
         T,
         'updateManyAndReturn',
-        ClientOptions
+        GlobalOmitOptions
       >
     >;
 
@@ -11232,11 +11235,11 @@ export namespace Prisma {
         Prisma.$PaymentPayload<ExtArgs>,
         T,
         'upsert',
-        ClientOptions
+        GlobalOmitOptions
       >,
       never,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
 
     /**
@@ -11388,7 +11391,7 @@ export namespace Prisma {
     T,
     Null = never,
     ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs,
-    ClientOptions = {}
+    GlobalOmitOptions = {}
   > extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: 'PrismaPromise';
     lease<T extends LeaseDefaultArgs<ExtArgs> = {}>(
@@ -11398,12 +11401,12 @@ export namespace Prisma {
           Prisma.$LeasePayload<ExtArgs>,
           T,
           'findUniqueOrThrow',
-          ClientOptions
+          GlobalOmitOptions
         >
       | Null,
       Null,
       ExtArgs,
-      ClientOptions
+      GlobalOmitOptions
     >;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
