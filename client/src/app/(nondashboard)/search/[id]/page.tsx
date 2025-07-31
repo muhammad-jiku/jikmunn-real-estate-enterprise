@@ -6,6 +6,7 @@ import ImagePreviews from '@/components/search/ImagePreviews';
 import PropertyDetails from '@/components/search/PropertyDetails';
 import PropertyLocation from '@/components/search/PropertyLocation';
 import PropertyOverview from '@/components/search/PropertyOverview';
+import { useGetAuthUserQuery } from '@/state/api';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 
@@ -13,6 +14,7 @@ const SingleListing = () => {
   const { id } = useParams();
   const propertyId = Number(id);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { data: authUser } = useGetAuthUserQuery();
 
   return (
     <div>
@@ -31,11 +33,13 @@ const SingleListing = () => {
         </div>
       </div>
 
-      <ApplicationModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        propertyId={propertyId}
-      />
+      {authUser && (
+        <ApplicationModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          propertyId={propertyId}
+        />
+      )}
     </div>
   );
 };

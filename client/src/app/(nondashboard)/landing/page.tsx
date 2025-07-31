@@ -1,3 +1,5 @@
+'use client';
+
 import CallToActionSection from '@/components/landing/CallToActionSection';
 import DiscoverSection from '@/components/landing/DiscoverSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
