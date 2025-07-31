@@ -2,23 +2,31 @@
 
 import Navbar from '@/components/shared/Navbar';
 import { NAVBAR_HEIGHT } from '@/lib/constants';
+import { useGetAuthUserQuery } from '@/state/api';
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
+  const { data: authUser, isLoading: authLoading } = useGetAuthUserQuery();
   const router = useRouter();
   const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (pathname.startsWith('/search') || pathname === '/') {
-      router.push('/managers/properties', { scroll: false });
-    } else {
-      setIsLoading(false);
+    if (authUser) {
+      const userRole = authUser.userRole?.toLowerCase();
+      if (
+        (userRole === 'manager' && pathname.startsWith('/search')) ||
+        (userRole === 'manager' && pathname === '/')
+      ) {
+        router.push('/managers/properties', { scroll: false });
+      } else {
+        setIsLoading(false);
+      }
     }
-  }, [router, pathname]);
+  }, [authUser, router, pathname]);
 
-  if (isLoading) return <>Loading...</>;
+  if (authLoading || isLoading) return <>Loading...</>;
 
   return (
     <div className='h-full w-full'>

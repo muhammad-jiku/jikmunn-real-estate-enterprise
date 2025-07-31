@@ -1,13 +1,18 @@
 import { Button } from '@/components/ui/button';
+import { useGetAuthUserQuery } from '@/state/api';
 import { Phone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ContactWidget = ({ onOpenModal }: ContactWidgetProps) => {
+  const { data: authUser } = useGetAuthUserQuery();
   const router = useRouter();
 
   const handleButtonClick = () => {
-    router.push('/signin');
+    if (authUser) {
+      onOpenModal();
+    } else {
+      router.push('/signin');
+    }
   };
 
   return (
@@ -28,7 +33,7 @@ const ContactWidget = ({ onOpenModal }: ContactWidgetProps) => {
         className='w-full bg-primary-700 text-white hover:bg-primary-600'
         onClick={handleButtonClick}
       >
-        {'Sign In to Apply'}
+        {authUser ? 'Submit Application' : 'Sign In to Apply'}
       </Button>
 
       <hr className='my-4' />

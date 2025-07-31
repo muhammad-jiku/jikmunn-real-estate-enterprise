@@ -125,7 +125,7 @@ const FiltersBar = () => {
           <Button
             onClick={handleLocationSearch}
             className={`rounded-r-xl rounded-l-none border-l-none border-primary-400 shadow-none 
-                border hover:bg-primary-700 hover:text-primary-50`}
+              border hover:bg-primary-700 hover:text-primary-50`}
           >
             <Search className='w-4 h-4' />
           </Button>

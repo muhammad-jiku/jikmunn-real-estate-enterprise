@@ -1,4 +1,5 @@
 'use client';
+
 import { useGetPropertiesQuery } from '@/state/api';
 import { useAppSelector } from '@/state/redux';
 import { Property } from '@/types/prismaTypes';
@@ -82,6 +83,7 @@ const createPropertyMarker = (property: Property, map: mapboxgl.Map) => {
       )
     )
     .addTo(map);
+
   return marker;
 };
 

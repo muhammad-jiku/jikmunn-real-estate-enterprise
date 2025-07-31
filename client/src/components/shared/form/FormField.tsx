@@ -24,7 +24,6 @@ import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 import 'filepond/dist/filepond.min.css';
 import { Edit, Plus, X } from 'lucide-react';
-import React from 'react';
 import { FilePond } from 'react-filepond';
 import {
   ControllerRenderProps,
