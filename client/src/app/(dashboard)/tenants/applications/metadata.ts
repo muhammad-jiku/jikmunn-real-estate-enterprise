@@ -1,5 +1,9 @@
 import type { Metadata } from 'next';
 
+const SITE = (
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://yourdomain.com'
+).replace(/\/$/, '');
+
 export const metadata: Metadata = {
   title: 'My Applications - Rentiful',
   description:
@@ -9,11 +13,6 @@ export const metadata: Metadata = {
     follow: false,
   },
   alternates: {
-    canonical:
-      process.env.NEXT_PUBLIC_SITE_URL!.replace(
-        //   (process.env.NEXT_PUBLIC_SITE_URL || 'https://yourdomain.com').replace(
-        /\/$/,
-        ''
-      ) + '/tenants/applications',
+    canonical: `${SITE}/tenants/applications`,
   },
 };
