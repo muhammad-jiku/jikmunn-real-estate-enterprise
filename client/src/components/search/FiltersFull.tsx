@@ -10,7 +10,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { AmenityIcons, PropertyTypeIcons } from '@/lib/constants';
+import {
+  AmenityEnum,
+  AmenityIcons,
+  PropertyTypeEnum,
+  PropertyTypeIcons,
+} from '@/lib/constants';
 import { cleanParams, cn, formatEnumString } from '@/lib/utils';
 import { FiltersState, initialState, setFilters } from '@/state';
 import { useAppSelector } from '@/state/redux';

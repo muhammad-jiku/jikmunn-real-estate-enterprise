@@ -1,5 +1,10 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AmenityIcons, HighlightIcons } from '@/lib/constants';
+import {
+  AmenityEnum,
+  AmenityIcons,
+  HighlightEnum,
+  HighlightIcons,
+} from '@/lib/constants';
 import { formatEnumString } from '@/lib/utils';
 import { useGetPropertyQuery } from '@/state/api';
 import { HelpCircle } from 'lucide-react';
