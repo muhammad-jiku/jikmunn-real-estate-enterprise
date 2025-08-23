@@ -1,3 +1,5 @@
+import { S3Client } from '@aws-sdk/client-s3';
+import { Upload } from '@aws-sdk/lib-storage';
 import { Location, Prisma, PrismaClient } from '@prisma/client';
 import { wktToGeoJSON } from '@terraformer/wkt';
 import axios from 'axios';
@@ -199,6 +201,10 @@ export const createProperty = async (
       ...propertyData
     } = req.body;
 
+    const s3Client = new S3Client({
+      region: process.env.AWS_REGION,
+    });
+
     const photoUrls = await Promise.all(
       files.map(async (file) => {
         const uploadParams = {
@@ -208,12 +214,12 @@ export const createProperty = async (
           ContentType: file.mimetype,
         };
 
-        // const uploadResult = await new Upload({
-        //   client: s3Client,
-        //   params: uploadParams,
-        // }).done();
+        const uploadResult = await new Upload({
+          client: s3Client,
+          params: uploadParams,
+        }).done();
 
-        // return uploadResult.Location;
+        return uploadResult.Location;
       })
     );
 
