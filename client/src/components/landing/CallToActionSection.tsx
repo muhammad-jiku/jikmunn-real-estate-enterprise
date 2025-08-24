@@ -8,12 +8,15 @@ const CallToActionSection = () => {
   return (
     <div className='relative py-24'>
       <Image
-        src='/landing-call-to-action.jpg'
-        alt='Rentiful Search Section Background'
-        fill
+        src='https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/landing-call-to-action.jpg'
         className='object-cover object-center'
+        alt='Rentiful Search Section Background'
+        onError={(e) => {
+          e.currentTarget.src = '/landing-call-to-action.jpg';
+        }}
+        fill
       />
-      <div className='absolute inset-0 bg-black bg-opacity-60'></div>
+      <div className='absolute inset-0 bg-black bg-black/50'></div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         transition={{ duration: 0.5 }}

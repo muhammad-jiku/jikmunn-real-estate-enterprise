@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 
 const containerVariants = {
   hidden: { opacity: 0, y: 50 },
@@ -41,7 +42,10 @@ const FeaturesSection = () => {
           {[0, 1, 2].map((index) => (
             <motion.div key={index} variants={itemVariants}>
               <FeatureCard
-                imageSrc={`/landing-search${3 - index}.png`}
+                imageSrc={`https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/landing-search${
+                  3 - index
+                }.png`}
+                fallbackSrc={`/landing-search${3 - index}.png`}
                 title={
                   [
                     'Trustworthy and Verified Listings',
@@ -57,7 +61,7 @@ const FeaturesSection = () => {
                   ][index]
                 }
                 linkText={['Explore', 'Search', 'Discover'][index]}
-                linkHref={['/explore', '/search', '/discover'][index]}
+                linkHref={['/search', '/search', '/search'][index]}
               />
             </motion.div>
           ))}
@@ -69,37 +73,50 @@ const FeaturesSection = () => {
 
 const FeatureCard = ({
   imageSrc,
+  fallbackSrc,
   title,
   description,
   linkText,
   linkHref,
 }: {
   imageSrc: string;
+  fallbackSrc: string;
   title: string;
   description: string;
   linkText: string;
   linkHref: string;
-}) => (
-  <div className='text-center'>
-    <div className='p-4 rounded-lg mb-4 flex items-center justify-center h-48'>
-      <Image
-        src={imageSrc}
-        width={400}
-        height={400}
-        className='w-full h-full object-contain'
-        alt={title}
-      />
+}) => {
+  const [currentSrc, setCurrentSrc] = useState(imageSrc);
+
+  const handleImageError = () => {
+    if (currentSrc !== fallbackSrc) {
+      setCurrentSrc(fallbackSrc);
+    }
+  };
+
+  return (
+    <div className='text-center'>
+      <div className='p-4 rounded-lg mb-4 flex items-center justify-center h-48'>
+        <Image
+          src={currentSrc}
+          width={400}
+          height={400}
+          className='w-full h-full object-contain'
+          alt={title}
+          onError={handleImageError}
+        />
+      </div>
+      <h3 className='text-xl font-semibold mb-2'>{title}</h3>
+      <p className='mb-4'>{description}</p>
+      <Link
+        href={linkHref}
+        className='inline-block border border-gray-300 rounded-sm px-4 py-2 hover:bg-gray-100'
+        scroll={false}
+      >
+        {linkText}
+      </Link>
     </div>
-    <h3 className='text-xl font-semibold mb-2'>{title}</h3>
-    <p className='mb-4'>{description}</p>
-    <Link
-      href={linkHref}
-      className='inline-block border border-gray-300 rounded px-4 py-2 hover:bg-gray-100'
-      scroll={false}
-    >
-      {linkText}
-    </Link>
-  </div>
-);
+  );
+};
 
 export default FeaturesSection;

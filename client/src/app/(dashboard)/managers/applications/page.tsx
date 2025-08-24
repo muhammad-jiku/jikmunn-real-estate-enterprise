@@ -86,7 +86,7 @@ const Applications = () => {
                       }`}
                     >
                       <div className='flex flex-wrap items-center'>
-                        <File className='w-5 h-5 mr-2 flex-shrink-0' />
+                        <File className='w-5 h-5 mr-2 shrink-0' />
                         <span className='mr-2'>
                           Application submitted on{' '}
                           {new Date(
@@ -94,7 +94,7 @@ const Applications = () => {
                           ).toLocaleDateString()}
                           .
                         </span>
-                        <CircleCheckBig className='w-5 h-5 mr-2 flex-shrink-0' />
+                        <CircleCheckBig className='w-5 h-5 mr-2 shrink-0' />
                         <span
                           className={`font-semibold ${
                             application.status === 'Approved'
@@ -137,7 +137,7 @@ const Applications = () => {
                       {application.status === 'Pending' && (
                         <>
                           <button
-                            className='px-4 py-2 text-sm text-white bg-green-600 rounded hover:bg-green-500'
+                            className='px-4 py-2 text-sm text-white bg-green-600 rounded-sm hover:bg-green-500'
                             onClick={() =>
                               handleStatusChange(application.id, 'Approved')
                             }
@@ -145,7 +145,7 @@ const Applications = () => {
                             Approve
                           </button>
                           <button
-                            className='px-4 py-2 text-sm text-white bg-red-600 rounded hover:bg-red-500'
+                            className='px-4 py-2 text-sm text-white bg-red-600 rounded-sm hover:bg-red-500'
                             onClick={() =>
                               handleStatusChange(application.id, 'Denied')
                             }

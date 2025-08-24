@@ -8,7 +8,8 @@ const ApplicationCard = ({
   children,
 }: ApplicationCardProps) => {
   const [imgSrc, setImgSrc] = useState(
-    application.property.photoUrls?.[0] || '/placeholder.jpg'
+    application.property.photoUrls?.[0] ||
+      'https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/placeholder.jpg'
   );
 
   const statusColor =
@@ -21,19 +22,25 @@ const ApplicationCard = ({
   const contactPerson =
     userType === 'manager' ? application.tenant : application.manager;
 
+  const handleImageError = () => {
+    if (imgSrc !== '/placeholder.jpg') {
+      setImgSrc('/placeholder.jpg');
+    }
+  };
+
   return (
-    <div className='border rounded-xl overflow-hidden shadow-sm bg-white mb-4'>
+    <div className='border rounded-xl overflow-hidden shadow-xs bg-white mb-4'>
       <div className='flex flex-col lg:flex-row  items-start lg:items-center justify-between px-6 md:px-4 py-6 gap-6 lg:gap-4'>
         {/* Property Info Section */}
         <div className='flex flex-col lg:flex-row gap-5 w-full lg:w-auto'>
           <Image
             src={imgSrc}
-            alt={application.property.name}
             width={200}
             height={150}
             className='rounded-xl object-cover w-full lg:w-[200px] h-[150px]'
+            alt={application.property.name}
             sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-            onError={() => setImgSrc('/placeholder.jpg')}
+            onError={handleImageError}
           />
           <div className='flex flex-col justify-between'>
             <div>
@@ -96,11 +103,14 @@ const ApplicationCard = ({
           <div className='flex gap-4'>
             <div>
               <Image
-                src='/landing-i1.png'
-                alt={contactPerson.name}
+                src='https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/landing-i1.png'
                 width={40}
                 height={40}
                 className='rounded-full mr-2 min-w-[40px] min-h-[40px]'
+                alt={contactPerson.name}
+                onError={(e) => {
+                  e.currentTarget.src = '/landing-i1.png';
+                }}
               />
             </div>
             <div className='flex flex-col gap-2'>

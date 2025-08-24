@@ -99,11 +99,14 @@ const PropertyTenants = () => {
                     <TableCell>
                       <div className='flex items-center space-x-3'>
                         <Image
-                          src='/landing-i1.png'
-                          alt={lease.tenant.name}
+                          src='https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/landing-i1.png'
                           width={40}
                           height={40}
                           className='rounded-full'
+                          alt={lease.tenant.name}
+                          onError={(e) => {
+                            e.currentTarget.src = '/landing-i1.png';
+                          }}
                         />
                         <div>
                           <div className='font-semibold'>

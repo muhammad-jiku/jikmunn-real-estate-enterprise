@@ -11,19 +11,26 @@ const CardCompact = ({
   propertyLink,
 }: CardCompactProps) => {
   const [imgSrc, setImgSrc] = useState(
-    property.photoUrls?.[0] || '/placeholder.jpg'
+    property.photoUrls?.[0] ||
+      'https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/placeholder.jpg'
   );
+
+  const handleImageError = () => {
+    if (imgSrc !== '/placeholder.jpg') {
+      setImgSrc('/placeholder.jpg');
+    }
+  };
 
   return (
     <div className='bg-white rounded-xl overflow-hidden shadow-lg w-full flex h-40 mb-5'>
       <div className='relative w-1/3'>
         <Image
           src={imgSrc}
+          className='object-cover'
           alt={property.name}
           fill
-          className='object-cover'
           sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-          onError={() => setImgSrc('/placeholder.jpg')}
+          onError={handleImageError}
         />
         <div className='absolute bottom-2 left-2 flex gap-1 flex-col'>
           {property.isPetsAllowed && (

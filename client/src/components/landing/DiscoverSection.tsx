@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useState } from 'react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -45,19 +46,25 @@ const DiscoverSection = () => {
         <div className='grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 xl:gap-16 text-center'>
           {[
             {
-              imageSrc: '/landing-icon-wand.png',
+              imageSrc:
+                'https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/landing-icon-wand.png',
+              fallbackSrc: '/landing-icon-wand.png',
               title: 'Search for Properties',
               description:
                 'Browse through our extensive collection of rental properties in your desired location.',
             },
             {
-              imageSrc: '/landing-icon-calendar.png',
+              imageSrc:
+                'https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/landing-icon-calendar.png',
+              fallbackSrc: '/landing-icon-calendar.png',
               title: 'Book Your Rental',
               description:
                 "Once you've found the perfect rental property, easily book it online with just a few clicks.",
             },
             {
-              imageSrc: '/landing-icon-heart.png',
+              imageSrc:
+                'https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/landing-icon-heart.png',
+              fallbackSrc: '/landing-icon-heart.png',
               title: 'Enjoy your New Home',
               description:
                 'Move into your new rental property and start enjoying your dream home.',
@@ -75,26 +82,39 @@ const DiscoverSection = () => {
 
 const DiscoverCard = ({
   imageSrc,
+  fallbackSrc,
   title,
   description,
 }: {
   imageSrc: string;
+  fallbackSrc: string;
   title: string;
   description: string;
-}) => (
-  <div className='px-4 py-12 shadow-lg rounded-lg bg-primary-50 md:h-72'>
-    <div className='bg-primary-700 p-[0.6rem] rounded-full mb-4 h-10 w-10 mx-auto'>
-      <Image
-        src={imageSrc}
-        width={30}
-        height={30}
-        className='w-full h-full'
-        alt={title}
-      />
+}) => {
+  const [currentSrc, setCurrentSrc] = useState(imageSrc);
+
+  const handleImageError = () => {
+    if (currentSrc !== fallbackSrc) {
+      setCurrentSrc(fallbackSrc);
+    }
+  };
+
+  return (
+    <div className='px-4 py-12 shadow-lg rounded-lg bg-primary-50 md:h-72'>
+      <div className='bg-primary-700 p-[0.6rem] rounded-full mb-4 h-10 w-10 mx-auto'>
+        <Image
+          src={currentSrc}
+          width={30}
+          height={30}
+          className='w-full h-full'
+          alt={title}
+          onError={handleImageError}
+        />
+      </div>
+      <h3 className='mt-4 text-xl font-medium text-gray-800'>{title}</h3>
+      <p className='mt-2 text-base text-gray-500'>{description}</p>
     </div>
-    <h3 className='mt-4 text-xl font-medium text-gray-800'>{title}</h3>
-    <p className='mt-2 text-base text-gray-500'>{description}</p>
-  </div>
-);
+  );
+};
 
 export default DiscoverSection;

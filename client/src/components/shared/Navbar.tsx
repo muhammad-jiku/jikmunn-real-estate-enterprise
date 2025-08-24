@@ -51,10 +51,10 @@ const Navbar = () => {
             <div className='flex items-center gap-3'>
               <Image
                 src='/logo.svg'
-                alt='Rentiful Logo'
                 width={24}
                 height={24}
                 className='w-6 h-6'
+                alt='Rentiful Logo'
               />
               <div className='text-xl font-bold'>
                 RENT
@@ -110,7 +110,7 @@ const Navbar = () => {
               </div>
 
               <DropdownMenu>
-                <DropdownMenuTrigger className='flex items-center gap-2 focus:outline-none'>
+                <DropdownMenuTrigger className='flex items-center gap-2 focus:outline-hidden'>
                   <Avatar>
                     <AvatarImage src={authUser.userInfo?.image} />
                     <AvatarFallback className='bg-primary-600'>

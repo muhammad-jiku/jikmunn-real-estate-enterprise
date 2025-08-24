@@ -74,7 +74,8 @@ declare global {
   }
 
   interface ImagePreviewsProps {
-    images: string[];
+    // images: string[];
+    images: { primary: string; fallback: string }[];
   }
 
   interface PropertyDetailsProps {
