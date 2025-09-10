@@ -23,7 +23,8 @@ const Map = () => {
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current!,
-      style: 'mapbox://styles/majesticglue/cm6u301pq008b01sl7yk1cnvb',
+      // style: 'mapbox://styles/muhammadjiku/cmdrd3kgo005701sh2c9m97nz', // minimo
+      style: 'mapbox://styles/muhammadjiku/cmfdjt786008r01sd6aib5e48', // default
       center: filters.coordinates || [-74.5, 40],
       zoom: 9,
     });

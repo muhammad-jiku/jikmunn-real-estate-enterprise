@@ -64,7 +64,9 @@ const HeroSection = () => {
           e.currentTarget.src = '/landing-splash.jpg';
         }}
       />
-      <div className='absolute inset-0 bg-black bg-black/50'></div>
+      {/* <div className='absolute inset-0 bg-black bg-black/50'></div>
+      <div className='absolute inset-0 bg-black'></div> */}
+      <div className='absolute inset-0 bg-black/50'></div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
