@@ -20,6 +20,7 @@ import { usePathname, useRouter } from 'next/navigation';
 
 const Navbar = () => {
   const { data: authUser } = useGetAuthUserQuery();
+  console.log('auth user in navbar', authUser);
   const router = useRouter();
   const pathname = usePathname();
 

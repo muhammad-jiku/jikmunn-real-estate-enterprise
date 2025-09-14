@@ -23,13 +23,19 @@ import { useParams } from 'next/navigation';
 const PropertyTenants = () => {
   const { id } = useParams();
   const propertyId = Number(id);
+  console.log('Property ID:', propertyId);
 
   const { data: property, isLoading: propertyLoading } =
     useGetPropertyQuery(propertyId);
+  console.log('Property data in managers property page:', property);
+
   const { data: leases, isLoading: leasesLoading } =
     useGetPropertyLeasesQuery(propertyId);
+  console.log('leases data in managers property page:', leases);
+
   const { data: payments, isLoading: paymentsLoading } =
     useGetPaymentsQuery(propertyId);
+  console.log('payments data in managers property page:', payments);
 
   if (propertyLoading || leasesLoading || paymentsLoading) return <Loading />;
 

@@ -31,6 +31,7 @@ const ApplicationModal = ({
   });
 
   const onSubmit = async (data: ApplicationFormData) => {
+    console.log('Form submitted with data:', data);
     if (!authUser || authUser.userRole !== 'tenant') {
       console.error(
         'You must be logged in as a tenant to submit an application'
@@ -45,6 +46,7 @@ const ApplicationModal = ({
       propertyId: propertyId,
       tenantCognitoId: authUser.cognitoInfo.userId,
     });
+
     onClose();
   };
 

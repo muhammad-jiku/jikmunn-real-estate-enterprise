@@ -17,6 +17,7 @@ const Residences = () => {
       skip: !authUser?.cognitoInfo?.userId,
     }
   );
+  console.log('tenant data in residences page', tenant);
 
   const {
     data: currentResidences,
@@ -25,6 +26,7 @@ const Residences = () => {
   } = useGetCurrentResidencesQuery(authUser?.cognitoInfo?.userId || '', {
     skip: !authUser?.cognitoInfo?.userId,
   });
+  console.log('current residences in residences page', currentResidences);
 
   if (isLoading) return <Loading />;
   if (error) return <div>Error loading current residences</div>;
