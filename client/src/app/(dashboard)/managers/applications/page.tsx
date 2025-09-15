@@ -30,12 +30,12 @@ const Applications = () => {
       skip: !authUser?.cognitoInfo?.userId,
     }
   );
-  console.log('Applications data in managers applications page:', applications);
+  // console.log('Applications data in managers applications page:', applications);
 
   const [updateApplicationStatus] = useUpdateApplicationStatusMutation();
 
   const handleStatusChange = async (id: number, status: string) => {
-    console.log('status change clicked:', id, status);
+    // console.log('status change clicked:', id, status);
     await updateApplicationStatus({ id, status });
   };
 
@@ -46,7 +46,7 @@ const Applications = () => {
     if (activeTab === 'all') return true;
     return application.status.toLowerCase() === activeTab;
   });
-  console.log('filtered Applications:', filteredApplications);
+  // console.log('filtered Applications:', filteredApplications);
 
   return (
     <div className='dashboard-container'>

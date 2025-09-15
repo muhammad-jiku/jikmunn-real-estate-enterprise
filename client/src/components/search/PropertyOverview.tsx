@@ -7,8 +7,8 @@ const PropertyOverview = ({ propertyId }: PropertyOverviewProps) => {
     isError,
     isLoading,
   } = useGetPropertyQuery(propertyId);
-  console.log('property id in overview component', propertyId);
-  console.log('property data in overview component', property);
+  // console.log('property id in overview component', propertyId);
+  // console.log('property data in overview component', property);
 
   if (isLoading) return <>Loading...</>;
   if (isError || !property) {

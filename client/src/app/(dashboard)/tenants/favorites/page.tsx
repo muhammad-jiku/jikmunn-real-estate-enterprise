@@ -17,7 +17,7 @@ const Favorites = () => {
       skip: !authUser?.cognitoInfo?.userId,
     }
   );
-  console.log('tenant data in favorites page', tenant);
+  // console.log('tenant data in favorites page', tenant);
 
   const {
     data: favoriteProperties,
@@ -27,7 +27,7 @@ const Favorites = () => {
     { favoriteIds: tenant?.favorites?.map((fav: { id: number }) => fav.id) },
     { skip: !tenant?.favorites || tenant?.favorites.length === 0 }
   );
-  console.log('favorite properties data', favoriteProperties);
+  // console.log('favorite properties data', favoriteProperties);
 
   if (isLoading) return <Loading />;
   if (error) return <div>Error loading favorites</div>;

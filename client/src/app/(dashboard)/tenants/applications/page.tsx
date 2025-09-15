@@ -16,7 +16,7 @@ const Applications = () => {
     userId: authUser?.cognitoInfo?.userId,
     userType: 'tenant',
   });
-  console.log('Applications data in tenants applications page:', applications);
+  // console.log('Applications data in tenants applications page:', applications);
 
   if (isLoading) return <Loading />;
   if (isError || !applications) return <div>Error fetching applications</div>;

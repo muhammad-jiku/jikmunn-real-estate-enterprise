@@ -14,7 +14,7 @@ const Properties = () => {
   } = useGetManagerPropertiesQuery(authUser?.cognitoInfo?.userId || '', {
     skip: !authUser?.cognitoInfo?.userId,
   });
-  console.log('manager properties in properties page', managerProperties);
+  // console.log('manager properties in properties page', managerProperties);
 
   if (isLoading) return <Loading />;
   if (error) return <div>Error loading manager properties</div>;

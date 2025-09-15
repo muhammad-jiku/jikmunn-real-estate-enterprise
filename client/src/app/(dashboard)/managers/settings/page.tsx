@@ -17,10 +17,10 @@ const ManagerSettings = () => {
     email: authUser?.userInfo.email,
     phoneNumber: authUser?.userInfo.phoneNumber,
   };
-  console.log('initial data in manager settings', initialData);
+  // console.log('initial data in manager settings', initialData);
 
   const handleSubmit = async (data: typeof initialData) => {
-    console.log('submitting manager settings data', data);
+    // console.log('submitting manager settings data', data);
     await updateManager({
       cognitoId: authUser?.cognitoInfo?.userId,
       ...data,

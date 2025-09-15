@@ -34,7 +34,7 @@ export const getProperties = async (
       latitude,
       longitude,
     } = req.query;
-    console.log('req.query::', req.query);
+    // console.log('req.query::', req.query);
 
     let whereConditions: Prisma.Sql[] = [];
 
@@ -145,11 +145,11 @@ export const getProperties = async (
     `;
 
     const properties = await prisma.$queryRaw(completeQuery);
-    console.log('get all properties:', properties);
+    // console.log('get all properties:', properties);
 
     res.json(properties);
   } catch (error: any) {
-    console.log('properties error:', error);
+    // console.log('properties error:', error);
     res
       .status(500)
       .json({ message: `Error retrieving properties: ${error.message}` });
@@ -162,7 +162,7 @@ export const getProperty = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    console.log('id:', id);
+    // console.log('id:', id);
 
     const property = await prisma.property.findUnique({
       where: { id: Number(id) },
@@ -170,7 +170,7 @@ export const getProperty = async (
         location: true,
       },
     });
-    console.log('property:', property);
+    // console.log('property:', property);
 
     if (property) {
       const coordinates: { coordinates: string }[] =
@@ -190,12 +190,12 @@ export const getProperty = async (
           },
         },
       };
-      console.log('propertyWithCoordinates:', propertyWithCoordinates);
+      // console.log('propertyWithCoordinates:', propertyWithCoordinates);
 
       res.json(propertyWithCoordinates);
     }
   } catch (err: any) {
-    console.log('error retrieving property:', err);
+    // console.log('error retrieving property:', err);
     res
       .status(500)
       .json({ message: `Error retrieving property: ${err.message}` });
@@ -217,15 +217,15 @@ export const createProperty = async (
       managerCognitoId,
       ...propertyData
     } = req.body;
-    console.log('received property data:', req.body);
+    // console.log('received property data:', req.body);
 
-    console.log(
-      'AWS keys present?',
-      !!process.env.AWS_REGION,
-      !!process.env.S3_BUCKET_NAME,
-      !!process.env.AWS_ACCESS_KEY_ID,
-      !!process.env.AWS_SECRET_ACCESS_KEY
-    );
+    // console.log(
+    //   'AWS keys present?',
+    //   !!process.env.AWS_REGION,
+    //   !!process.env.S3_BUCKET_NAME,
+    //   !!process.env.AWS_ACCESS_KEY_ID,
+    //   !!process.env.AWS_SECRET_ACCESS_KEY
+    // );
 
     const photoUrls = await Promise.all(
       files.map(async (file) => {
@@ -257,14 +257,14 @@ export const createProperty = async (
         limit: '1',
       }
     ).toString()}`;
-    console.log('Geocoding URL:', geocodingUrl);
+    // console.log('Geocoding URL:', geocodingUrl);
 
     const geocodingResponse = await axios.get(geocodingUrl, {
       headers: {
         'User-Agent': 'RealEstateApp (justsomedummyemail@gmail.com)',
       },
     });
-    console.log('Geocoding response data:', geocodingResponse.data);
+    // console.log('Geocoding response data:', geocodingResponse.data);
 
     const [longitude, latitude] =
       geocodingResponse.data[0]?.lon && geocodingResponse.data[0]?.lat
@@ -273,7 +273,7 @@ export const createProperty = async (
             parseFloat(geocodingResponse.data[0]?.lat),
           ]
         : [0, 0];
-    console.log('Geocoded coordinates:', { longitude, latitude });
+    // console.log('Geocoded coordinates:', { longitude, latitude });
 
     // create location
     const [location] = await prisma.$queryRaw<Location[]>`
@@ -281,7 +281,7 @@ export const createProperty = async (
       VALUES (${address}, ${city}, ${state}, ${country}, ${postalCode}, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326))
       RETURNING id, address, city, state, country, "postalCode", ST_AsText(coordinates) as coordinates;
     `;
-    console.log('New location created:', location);
+    // console.log('New location created:', location);
 
     // create property
     const newProperty = await prisma.property.create({
@@ -316,7 +316,7 @@ export const createProperty = async (
 
     res.status(201).json(newProperty);
   } catch (err: any) {
-    console.log('Error creating property:', err);
+    // console.log('Error creating property:', err);
     res
       .status(500)
       .json({ message: `Error creating property: ${err.message}` });

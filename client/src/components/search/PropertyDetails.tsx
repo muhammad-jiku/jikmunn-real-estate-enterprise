@@ -15,8 +15,8 @@ const PropertyDetails = ({ propertyId }: PropertyDetailsProps) => {
     isError,
     isLoading,
   } = useGetPropertyQuery(propertyId);
-  console.log('property id in details component', propertyId);
-  console.log('property in details component', property);
+  // console.log('property id in details component', propertyId);
+  // console.log('property in details component', property);
 
   if (isLoading) return <>Loading...</>;
   if (isError || !property) {

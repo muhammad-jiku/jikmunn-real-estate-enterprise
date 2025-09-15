@@ -43,13 +43,13 @@ const NewProperty = () => {
       throw new Error('No manager ID found');
     }
 
-    console.log('Form Data before processing:', data);
+    // console.log('Form Data before processing:', data);
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
-      console.log('first key and value:', key, value);
+      // console.log('first key and value:', key, value);
       if (key === 'photoUrls') {
         const files = value as File[];
-        console.log('files to upload:', files);
+        // console.log('files to upload:', files);
         files.forEach((file: File) => {
           formData.append('photos', file);
         });
@@ -60,9 +60,9 @@ const NewProperty = () => {
       }
     });
 
-    console.log('Form Data Entries before cognitoid:', formData);
+    // console.log('Form Data Entries before cognitoid:', formData);
     formData.append('managerCognitoId', authUser.cognitoInfo.userId);
-    console.log('Form Data Entries after cognitoid:', formData);
+    // console.log('Form Data Entries after cognitoid:', formData);
 
     await createProperty(formData);
   };

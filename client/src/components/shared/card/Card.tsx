@@ -10,6 +10,9 @@ const Card = ({
   showFavoriteButton = true,
   propertyLink,
 }: CardProps) => {
+  console.log('Property in Card component:', property);
+  console.log('property photoUrls in Card component:', property.photoUrls);
+  console.log('propertyLink in Card component:', propertyLink);
   const [imgSrc, setImgSrc] = useState(
     property.photoUrls?.[0] ||
       'https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/placeholder.jpg'

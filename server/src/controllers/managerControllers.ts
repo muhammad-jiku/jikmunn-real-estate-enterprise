@@ -10,11 +10,12 @@ export const getManager = async (
 ): Promise<void> => {
   try {
     const { cognitoId } = req.params;
-    console.log('cognitoId', cognitoId);
+    // console.log('cognitoId', cognitoId);
+
     const manager = await prisma.manager.findUnique({
       where: { cognitoId },
     });
-    console.log('manager', manager);
+    // console.log('manager', manager);
 
     if (manager) {
       res.json(manager);
@@ -22,7 +23,7 @@ export const getManager = async (
       res.status(404).json({ message: 'Manager not found' });
     }
   } catch (error: any) {
-    console.log('error getting manager', error);
+    // console.log('error getting manager', error);
     res
       .status(500)
       .json({ message: `Error retrieving manager: ${error.message}` });
@@ -35,7 +36,7 @@ export const createManager = async (
 ): Promise<void> => {
   try {
     const { cognitoId, name, email, phoneNumber } = req.body;
-    console.log('req.body:', req.body);
+    // console.log('req.body:', req.body);
 
     const manager = await prisma.manager.create({
       data: {
@@ -45,11 +46,11 @@ export const createManager = async (
         phoneNumber,
       },
     });
-    console.log('manager created:', manager);
+    // console.log('manager created:', manager);
 
     res.status(201).json(manager);
   } catch (error: any) {
-    console.log('manager creation error:', error);
+    // console.log('manager creation error:', error);
     res
       .status(500)
       .json({ message: `Error creating manager: ${error.message}` });
@@ -63,8 +64,8 @@ export const updateManager = async (
   try {
     const { cognitoId } = req.params;
     const { name, email, phoneNumber } = req.body;
-    console.log('cognitoId:', cognitoId);
-    console.log('req.body:', req.body);
+    // console.log('cognitoId:', cognitoId);
+    // console.log('req.body:', req.body);
 
     const updateManager = await prisma.manager.update({
       where: { cognitoId },
@@ -74,7 +75,7 @@ export const updateManager = async (
         phoneNumber,
       },
     });
-    console.log('updateManager:', updateManager);
+    // console.log('updateManager:', updateManager);
 
     res.json(updateManager);
   } catch (error: any) {
@@ -90,7 +91,7 @@ export const getManagerProperties = async (
 ): Promise<void> => {
   try {
     const { cognitoId } = req.params;
-    console.log('cognitoId:', cognitoId);
+    // console.log('cognitoId:', cognitoId);
 
     const properties = await prisma.property.findMany({
       where: { managerCognitoId: cognitoId },
@@ -98,7 +99,7 @@ export const getManagerProperties = async (
         location: true,
       },
     });
-    console.log('manager properties:', properties);
+    // console.log('manager properties:', properties);
 
     const propertiesWithFormattedLocation = await Promise.all(
       properties.map(async (property) => {
@@ -121,14 +122,14 @@ export const getManagerProperties = async (
         };
       })
     );
-    console.log(
-      'propertiesWithFormattedLocation:',
-      propertiesWithFormattedLocation
-    );
+    // console.log(
+    //   'propertiesWithFormattedLocation:',
+    //   propertiesWithFormattedLocation
+    // );
 
     res.json(propertiesWithFormattedLocation);
   } catch (err: any) {
-    console.log('error retrieving manager properties:', err);
+    // console.log('error retrieving manager properties:', err);
     res
       .status(500)
       .json({ message: `Error retrieving manager properties: ${err.message}` });

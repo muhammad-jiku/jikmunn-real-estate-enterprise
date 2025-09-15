@@ -11,11 +11,11 @@ export const getLeases = async (req: Request, res: Response): Promise<void> => {
         property: true,
       },
     });
-    console.log('leases:', leases);
+    // console.log('leases:', leases);
 
     res.json(leases);
   } catch (error: any) {
-    console.log('leases error:', error);
+    // console.log('leases error:', error);
     res
       .status(500)
       .json({ message: `Error retrieving leases: ${error.message}` });
@@ -28,16 +28,16 @@ export const getLeasePayments = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    console.log('id:', id);
+    // console.log('id:', id);
 
     const payments = await prisma.payment.findMany({
       where: { leaseId: Number(id) },
     });
-    console.log('payments:', payments);
+    // console.log('payments:', payments);
 
     res.json(payments);
   } catch (error: any) {
-    console.log('lease payments error:', error);
+    // console.log('lease payments error:', error);
     res
       .status(500)
       .json({ message: `Error retrieving lease payments: ${error.message}` });
