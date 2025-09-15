@@ -1,4 +1,4 @@
-import { ObjectCannedACL, S3Client } from '@aws-sdk/client-s3';
+import { S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { Location, Prisma, PrismaClient } from '@prisma/client';
 import { wktToGeoJSON } from '@terraformer/wkt';
@@ -246,7 +246,6 @@ export const createProperty = async (
           Key: key,
           Body: file.buffer,
           ContentType: file.mimetype,
-          ACL: 'public-read' as ObjectCannedACL, // Make file publicly accessible
         };
 
         const uploadResult = await new Upload({
