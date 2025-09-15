@@ -1,4 +1,4 @@
-import { S3Client } from '@aws-sdk/client-s3';
+import { ObjectCannedACL, S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { Location, Prisma, PrismaClient } from '@prisma/client';
 import { wktToGeoJSON } from '@terraformer/wkt';
@@ -227,26 +227,43 @@ export const createProperty = async (
     //   !!process.env.AWS_SECRET_ACCESS_KEY
     // );
 
+    // Helper function to sanitize filename
+    const sanitizeFilename = (filename: string): string => {
+      return filename
+        .replace(/[^a-zA-Z0-9.-]/g, '_') // Replace special chars with underscore
+        .replace(/_{2,}/g, '_') // Replace multiple underscores with single
+        .toLowerCase();
+    };
+
     const photoUrls = await Promise.all(
       files.map(async (file) => {
+        const sanitizedFilename = sanitizeFilename(file.originalname);
+        const key = `properties/${Date.now()}-${sanitizedFilename}`;
+        //  const key = `${Date.now()}-${sanitizedFilename}`;
+
         const uploadParams = {
           Bucket: process.env.S3_BUCKET_NAME!,
-          Key: `${Date.now()}-${file.originalname}`,
-          // Key: `properties/${Date.now()}-${file.originalname}`,
+          Key: key,
           Body: file.buffer,
           ContentType: file.mimetype,
+          ACL: 'public-read' as ObjectCannedACL, // Make file publicly accessible
         };
 
         const uploadResult = await new Upload({
           client: s3Client,
           params: uploadParams,
         }).done();
-        console.log('upload result:', uploadResult);
 
-        return uploadResult.Location;
+        console.log('Upload result:', uploadResult);
+
+        // Construct the public URL manually to ensure consistency
+        const publicUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+        console.log('public url', publicUrl);
+
+        return publicUrl;
       })
     );
-    console.log('photo urls:', photoUrls);
+    console.log('Photo URLs:', photoUrls);
 
     const geocodingUrl = `https://nominatim.openstreetmap.org/search?${new URLSearchParams(
       {
