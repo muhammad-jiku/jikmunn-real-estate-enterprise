@@ -10,9 +10,10 @@ const CardCompact = ({
   showFavoriteButton = true,
   propertyLink,
 }: CardCompactProps) => {
-  const [imgSrc, setImgSrc] = useState(
-    property.photoUrls?.[0] ||
-      'https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/placeholder.jpg'
+  const [imgSrc, setImgSrc] = useState<string>(
+    property?.photoUrls?.length > 0
+      ? (property?.photoUrls?.[0] as string)
+      : 'https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/placeholder.jpg'
   );
 
   const handleImageError = () => {

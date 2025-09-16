@@ -238,28 +238,32 @@ export const createProperty = async (
     const photoUrls = await Promise.all(
       files.map(async (file) => {
         const sanitizedFilename = sanitizeFilename(file.originalname);
-        const key = `properties/${Date.now()}-${sanitizedFilename}`;
-        //  const key = `${Date.now()}-${sanitizedFilename}`;
+        const key = `properties/${Date.now()}-${sanitizedFilename}`; // Keep properties/ dir
+        // const key = `${Date.now()}-${sanitizedFilename}`; // Without properties/ dir
 
         const uploadParams = {
           Bucket: process.env.S3_BUCKET_NAME!,
           Key: key,
           Body: file.buffer,
           ContentType: file.mimetype,
+          CacheControl: 'max-age=31536000',
+          Metadata: {
+            'uploaded-by': 'api',
+          },
         };
 
         const uploadResult = await new Upload({
           client: s3Client,
           params: uploadParams,
         }).done();
-
         console.log('Upload result:', uploadResult);
+        console.log('Upload result Location:', uploadResult.Location);
 
-        // Construct the public URL manually to ensure consistency
-        const publicUrl = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-        console.log('public url', publicUrl);
-
-        return publicUrl;
+        // Use the Location directly from AWS response or Construct the public URL manually to ensure consistency
+        return (
+          uploadResult.Location ||
+          `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
+        );
       })
     );
     console.log('Photo URLs:', photoUrls);

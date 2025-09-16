@@ -13,7 +13,7 @@ import { useMemo, useState } from 'react';
 const SingleListing = () => {
   const { id } = useParams();
   const propertyId = Number(id);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const { data: authUser } = useGetAuthUserQuery();
 
   const imageUrls = useMemo(() => {

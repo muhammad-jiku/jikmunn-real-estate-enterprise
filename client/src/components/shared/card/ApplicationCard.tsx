@@ -7,9 +7,10 @@ const ApplicationCard = ({
   userType,
   children,
 }: ApplicationCardProps) => {
-  const [imgSrc, setImgSrc] = useState(
-    application.property.photoUrls?.[0] ||
-      'https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/placeholder.jpg'
+  const [imgSrc, setImgSrc] = useState<string>(
+    application?.property?.photoUrls?.length > 0
+      ? (application.property.photoUrls?.[0] as string)
+      : 'https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/placeholder.jpg'
   );
 
   const statusColor =

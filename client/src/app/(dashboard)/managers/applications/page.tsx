@@ -15,7 +15,7 @@ import { useState } from 'react';
 
 const Applications = () => {
   const { data: authUser } = useGetAuthUserQuery();
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState<string>('all');
 
   const {
     data: applications,

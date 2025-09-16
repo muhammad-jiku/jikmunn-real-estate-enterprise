@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 
 const ImagePreviews = ({ images }: ImagePreviewsProps) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [imageSources, setImageSources] = useState(
     images.map((img) => img.primary)
   );
@@ -45,14 +45,16 @@ const ImagePreviews = ({ images }: ImagePreviewsProps) => {
       ))}
       <button
         onClick={handlePrev}
-        className='absolute left-0 top-1/2 transform -translate-y-1/2 bg-primary-700 bg-black/50 p-2 rounded-full focus:outline-hidden focus:ring-3 focus:ring-secondary-300'
+        // className='absolute left-0 top-1/2 transform -translate-y-1/2 bg-primary-700 bg-black/50 p-2 rounded-full focus:outline-hidden focus:ring-3 focus:ring-secondary-300'
+        className='absolute left-0 top-1/2 transform -translate-y-1/2 bg-black/50 p-2 rounded-full focus:outline-hidden focus:ring-3 focus:ring-secondary-300'
         aria-label='Previous image'
       >
         <ChevronLeft className='text-white' />
       </button>
       <button
         onClick={handleNext}
-        className='absolute right-0 top-1/2 transform -translate-y-1/2 bg-primary-700 bg-black/50 p-2 rounded-full focus:outline-hidden focus:ring-3 focus:ring-secondary-300'
+        // className='absolute right-0 top-1/2 transform -translate-y-1/2 bg-primary-700 bg-black/50 p-2 rounded-full focus:outline-hidden focus:ring-3 focus:ring-secondary-300'
+        className='absolute right-0 top-1/2 transform -translate-y-1/2 bg-black/50 p-2 rounded-full focus:outline-hidden focus:ring-3 focus:ring-secondary-300'
         aria-label='Next image'
       >
         <ChevronRight className='text-white' />

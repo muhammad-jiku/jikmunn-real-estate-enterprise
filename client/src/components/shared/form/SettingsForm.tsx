@@ -11,7 +11,7 @@ const SettingsForm = ({
   onSubmit,
   userType,
 }: SettingsFormProps) => {
-  const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState<boolean>(false);
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
     defaultValues: initialData,
