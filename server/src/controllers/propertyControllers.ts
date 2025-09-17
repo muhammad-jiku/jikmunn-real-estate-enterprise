@@ -250,7 +250,10 @@ export const createProperty = async (
 
     form.parse(req, async (err, fields, files) => {
       try {
+        console.log('err:', err);
         if (err) throw err;
+        console.log('fields:', fields);
+        console.log('files:', files);
 
         // Extract form fields (properties)
         const {
@@ -378,12 +381,13 @@ export const createProperty = async (
             : [0, 0];
         // console.log('Geocoded coordinates:', { longitude, latitude });
 
+        // create location
         const [location] = await prisma.$queryRaw<Location[]>`
-          INSERT INTO "Location" (address, city, state, country, "postalCode", coordinates)
-          VALUES (${address}, ${city}, ${state}, ${country}, ${postalCode}, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326))
-          RETURNING id, address, city, state, country, "postalCode", ST_AsText(coordinates) as coordinates;
-        `;
-        // console.log('New location created:', location);
+            INSERT INTO "Location" (address, city, state, country, "postalCode", coordinates)
+            VALUES (${address}, ${city}, ${state}, ${country}, ${postalCode}, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326))
+            RETURNING id, address, city, state, country, "postalCode", ST_AsText(coordinates) as coordinates;
+          `;
+        console.log('New location created:', location);
 
         const newProperty = await prisma.property.create({
           data: {
