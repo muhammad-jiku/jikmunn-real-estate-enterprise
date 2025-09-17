@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { CustomFormField } from '@/components/shared/form/FormField';
@@ -38,32 +39,67 @@ const NewProperty = () => {
     },
   });
 
+  // helper to convert dataURL -> File
+  const dataURLToFile = async (
+    dataurl: string,
+    filename: string
+  ): Promise<File> => {
+    console.log('data url', dataurl);
+    console.log('filename', filename);
+    // fetch works for data URLs in browsers
+    const res = await fetch(dataurl);
+    const blob = await res.blob();
+    return new File([blob], filename, { type: blob.type });
+  };
+
   const onSubmit = async (data: PropertyFormData) => {
     if (!authUser?.cognitoInfo?.userId) {
       throw new Error('No manager ID found');
     }
 
-    // console.log('Form Data before processing:', data);
     const formData = new FormData();
-    Object.entries(data).forEach(([key, value]) => {
-      // console.log('first key and value:', key, value);
+
+    // iterate keys and append correctly
+    for (const [key, value] of Object.entries(data)) {
       if (key === 'photoUrls') {
-        const files = value as File[];
-        // console.log('files to upload:', files);
-        files.forEach((file: File) => {
-          formData.append('photos', file);
-        });
+        const filesOrStrings = value as any; // could be File[] or dataURL[] or mixed
+        if (Array.isArray(filesOrStrings)) {
+          for (let i = 0; i < filesOrStrings.length; i++) {
+            const item = filesOrStrings[i];
+            if (typeof item === 'string' && item.startsWith('data:')) {
+              // it's a base64 data URL: convert to File
+              const filename = `upload_${Date.now()}_${i}.jpg`;
+              const fileObj = await dataURLToFile(item, filename);
+              formData.append('photos', fileObj);
+            } else if (item instanceof File) {
+              formData.append('photos', item);
+            } else {
+              // possibly undefined / null - ignore
+              console.log('Skipping unsupported photoUrls item', item);
+            }
+          }
+        }
       } else if (Array.isArray(value)) {
         formData.append(key, JSON.stringify(value));
       } else {
         formData.append(key, String(value));
       }
-    });
+    }
 
-    // console.log('Form Data Entries before cognitoid:', formData);
     formData.append('managerCognitoId', authUser.cognitoInfo.userId);
-    // console.log('Form Data Entries after cognitoid:', formData);
 
+    // DEBUG: inspect FormData contents before sending
+    // This will print each entry; for files it prints File object info in browser console
+    for (const pair of (formData as any).entries()) {
+      const [k, v] = pair as [string, any];
+      if (v instanceof File) {
+        console.log('formData file entry:', k, v.name, v.type, v.size);
+      } else {
+        console.log('formData entry:', k, v);
+      }
+    }
+
+    // send as FormData
     await createProperty(formData);
   };
 
