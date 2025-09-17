@@ -14,12 +14,7 @@ const router = express.Router();
 
 router
   .route('/')
-  .post(
-    authMiddleware(['manager']),
-    // upload.array( 'photos' ),
-    express.raw({ type: 'multipart/form-data', limit: '50mb' }), // Handle raw form data
-    createProperty
-  )
+  .post(authMiddleware(['manager']), upload.array('photos'), createProperty)
   .get(getProperties);
 
 router.route('/:id').get(getProperty);

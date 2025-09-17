@@ -61,44 +61,43 @@ const NewProperty = () => {
 
     // iterate keys and append correctly
     // for (const [key, value] of Object.entries(data)) {
-    // if (key === 'photoUrls') {
-    //   const filesOrStrings = value as any; // could be File[] or dataURL[] or mixed
-    //   if (Array.isArray(filesOrStrings)) {
-    //     for (let i = 0; i < filesOrStrings.length; i++) {
-    //       const item = filesOrStrings[i];
-    //       if (typeof item === 'string' && item.startsWith('data:')) {
-    //         // it's a base64 data URL: convert to File
-    //         const filename = `upload_${Date.now()}_${i}.jpg`;
-    //         const fileObj = await dataURLToFile(item, filename);
-    //         formData.append('photos', fileObj);
-    //       } else if (item instanceof File) {
-    //         formData.append('photos', item);
-    //       } else {
-    //         // possibly undefined / null - ignore
-    //         console.log('Skipping unsupported photoUrls item', item);
+    //   if (key === 'photoUrls') {
+    //     const filesOrStrings = value as any; // could be File[] or dataURL[] or mixed
+    //     if (Array.isArray(filesOrStrings)) {
+    //       for (let i = 0; i < filesOrStrings.length; i++) {
+    //         const item = filesOrStrings[i];
+    //         if (typeof item === 'string' && item.startsWith('data:')) {
+    //           // it's a base64 data URL: convert to File
+    //           const filename = `upload_${Date.now()}_${i}.jpg`;
+    //           const fileObj = await dataURLToFile(item, filename);
+    //           formData.append('photos', fileObj);
+    //         } else if (item instanceof File) {
+    //           formData.append('photos', item);
+    //         } else {
+    //           // possibly undefined / null - ignore
+    //           console.log('Skipping unsupported photoUrls item', item);
+    //         }
     //       }
     //     }
+    //   } else if (Array.isArray(value)) {
+    //     formData.append(key, JSON.stringify(value));
+    //   } else {
+    //     formData.append(key, String(value));
     //   }
-    // } else if (Array.isArray(value)) {
-    //   formData.append(key, JSON.stringify(value));
-    // } else {
-    //   formData.append(key, String(value));
-    // }
     // }
 
-    for (const [key, value] of Object.entries(data)) {
+    Object.entries(data).forEach(([key, value]) => {
       if (key === 'photoUrls') {
-        // Handle files directly - no conversion needed
         const files = value as File[];
-        for (const file of files) {
+        files.forEach((file: File) => {
           formData.append('photos', file);
-        }
+        });
       } else if (Array.isArray(value)) {
         formData.append(key, JSON.stringify(value));
       } else {
         formData.append(key, String(value));
       }
-    }
+    });
 
     formData.append('managerCognitoId', authUser.cognitoInfo.userId);
 
