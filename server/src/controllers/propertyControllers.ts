@@ -352,6 +352,7 @@ export const createProperty = async (
           ACL: 'public-read' as const,
           CacheControl: 'max-age=31536000',
         };
+        console.log('uploade params:', uploadParams);
 
         const uploadResult = await new Upload({
           client: s3Client,
@@ -365,6 +366,7 @@ export const createProperty = async (
         );
       })
     );
+    console.log('photoUrls::', photoUrls);
 
     const geocodingUrl = `https://nominatim.openstreetmap.org/search?${new URLSearchParams(
       {
@@ -381,7 +383,7 @@ export const createProperty = async (
       headers: { 'User-Agent': 'RealEstateApp (justsomedummyemail@gmail.com)' },
       timeout: 10000,
     });
-    console.log('Geocoding response data:', geocodingResponse.data);
+    // console.log('Geocoding response data:', geocodingResponse.data);
 
     const [longitude, latitude] =
       geocodingResponse.data?.[0]?.lon && geocodingResponse.data?.[0]?.lat
@@ -390,7 +392,7 @@ export const createProperty = async (
             parseFloat(geocodingResponse.data[0].lat),
           ]
         : [0, 0];
-    console.log('Geocoding result:', { longitude, latitude });
+    // console.log('Geocoding result:', { longitude, latitude });
 
     const [location] = await prisma.$queryRaw<Location[]>`
       INSERT INTO "Location" (address, city, state, country, "postalCode", coordinates)
@@ -424,7 +426,7 @@ export const createProperty = async (
       },
       include: { location: true, manager: true },
     });
-    console.log('new property created', newProperty);
+    // console.log('new property created', newProperty);
 
     return res.status(201).json(newProperty);
   } catch (err: any) {
