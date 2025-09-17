@@ -4,8 +4,7 @@ import { Location, Prisma, PrismaClient } from '@prisma/client';
 import { wktToGeoJSON } from '@terraformer/wkt';
 import axios from 'axios';
 import { Request, Response } from 'express';
-import { File as FormidableFile, IncomingForm } from 'formidable';
-import fs from 'fs/promises';
+import multer from 'multer';
 
 const prisma = new PrismaClient();
 
@@ -14,6 +13,19 @@ const s3Client = new S3Client({
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+
+/** Helpers **/
+export const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB per file
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error('Only jpg, jpeg, png and webp files are allowed'));
+    }
+    cb(null, true);
   },
 });
 
@@ -29,25 +41,34 @@ const buildS3Url = (bucket: string, region: string, key: string) =>
 
 const looksLikeImage = (buf: Buffer) => {
   if (!buf || buf.length < 4) return false;
-  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return true; // jpeg
+  // JPEG
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return true;
+  // PNG
   if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47)
-    return true; // png
+    return true;
+  // WEBP: "RIFF" + "WEBP" appears at offsets 0 and 8, but checking "RIFF" is a quick check
   if (buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46)
-    return true; // webp (RIFF)
+    return true;
   return false;
 };
 
+/**
+ * Accept Buffer | string (rare) and try decodes; return Buffer
+ */
 const ensureBuffer = (input: Buffer | string): Buffer => {
   if (Buffer.isBuffer(input)) return input;
   const str = input as string;
+  // try base64 decode
   try {
     const b = Buffer.from(str, 'base64');
     if (looksLikeImage(b)) return b;
   } catch {}
+  // try binary
   try {
     const b = Buffer.from(str, 'binary');
     if (looksLikeImage(b)) return b;
   } catch {}
+  // fallback
   return Buffer.from(str);
 };
 
@@ -238,34 +259,13 @@ export const getProperty = async (
   }
 };
 
-/** ---------- NEW createProperty using formidable (promise wrapper) ---------- **/
-const parseForm = (req: Request): Promise<{ fields: any; files: any }> =>
-  new Promise((resolve, reject) => {
-    const form = new IncomingForm({
-      multiples: true,
-      keepExtensions: true,
-      // you can adjust maxFileSize if needed
-      maxFileSize: 25 * 1024 * 1024, // 25 MB per file
-    });
-
-    form.parse(req, (err, fields, files) => {
-      console.log('formidable parse err:', err);
-      if (err) return reject(err);
-      resolve({ fields, files });
-    });
-  });
-
 export const createProperty = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    // Parse form (fields + files)
-    const { fields, files } = await parseForm(req);
-    console.log('Parsed fields:', fields);
-    console.log('Parsed files:', files);
-
-    // Extract form fields (properties)
+    // files come from multer memoryStorage
+    const files = (req.files as Express.Multer.File[]) || [];
     const {
       address,
       city,
@@ -274,72 +274,55 @@ export const createProperty = async (
       postalCode,
       managerCognitoId,
       ...propertyData
-    } = fields as any;
-    console.log('Received property data:', fields);
+    } = req.body;
+    console.log('received property data:', req.body);
 
-    // Normalize files.photos (could be single or array)
-    let incomingFiles: FormidableFile[] = [];
-    if (!files || !files.photos) {
+    if (!files.length) {
       res.status(400).json({ message: 'No files uploaded' });
+
       return;
     }
 
-    if (Array.isArray(files.photos))
-      incomingFiles = files.photos as FormidableFile[];
-    else incomingFiles = [files.photos as unknown as FormidableFile];
-
-    // Upload each file
     const photoUrls = await Promise.all(
-      incomingFiles.map(async (f) => {
-        const filePath = (f as any).filepath || (f as any).path;
-        const raw = await fs.readFile(filePath);
-        // convert to Buffer if necessary and verify
+      files.map(async (file) => {
+        // file.buffer is available with memoryStorage
+        const raw = (file as any).buffer ?? null;
+        if (!raw)
+          throw new Error(
+            'No buffer found for uploaded file. Ensure multer.memoryStorage() is used.'
+          );
+
         const bodyBuffer = ensureBuffer(raw);
-        console.log(
-          'Uploading',
-          (f as any).originalFilename || (f as any).newFilename,
-          {
-            size: bodyBuffer.byteLength,
-            looksLikeImage: looksLikeImage(bodyBuffer),
-          }
-        );
+        console.log('Uploading', file.originalname, {
+          reportedSize: file.size,
+          bufferBytes: bodyBuffer.byteLength,
+          looksLikeImage: looksLikeImage(bodyBuffer),
+        });
 
-        const sanitizedFilename = sanitizeFilename(
-          (f as any).originalFilename || (f as any).newFilename || 'upload'
-        );
-        console.log('Sanitized filename:', sanitizedFilename);
+        const sanitizedFilename = sanitizeFilename(file.originalname);
         const key = `properties/${Date.now()}-${sanitizedFilename}`;
+        console.log('Sanitized filename:', sanitizedFilename);
+        console.log('Uploading to S3 with key:', key);
 
-        const params: any = {
+        const uploadParams: any = {
           Bucket: process.env.S3_BUCKET_NAME!,
           Key: key,
           Body: bodyBuffer,
-          ContentType:
-            (f as any).mimetype ||
-            (f as any).type ||
-            'application/octet-stream',
-          ContentLength: bodyBuffer.byteLength,
+          ContentType: file.mimetype || 'application/octet-stream',
           CacheControl: 'max-age=31536000',
-          Metadata: {
-            'uploaded-by': 'api',
-          },
+          Metadata: { 'uploaded-by': 'api' },
+          ContentLength: bodyBuffer.byteLength,
+          // ACL: 'public-read' // debug-only
         };
-        console.log('params:', params);
+        console.log('upload params', uploadParams);
 
         const uploadResult = await new Upload({
           client: s3Client,
-          params,
+          params: uploadParams,
         }).done();
         console.log('UploadResult:', uploadResult);
 
-        // delete temp file to free disk
-        try {
-          await fs.unlink(filePath);
-        } catch (unlinkErr) {
-          console.log('Could not delete temp file:', filePath, unlinkErr);
-        }
-
-        // confirm via HeadObject
+        // confirm metadata
         try {
           const head = await s3Client.send(
             new HeadObjectCommand({
@@ -352,41 +335,37 @@ export const createProperty = async (
             ContentLength: head.ContentLength,
             ContentType: head.ContentType,
             ServerSideEncryption: head.ServerSideEncryption,
+            Metadata: head.Metadata,
           });
         } catch (hErr) {
           console.log('HeadObject failed for', key, hErr);
         }
 
-        // Use Location if present otherwise construct URL
-        const publicUrl =
-          (uploadResult as any).Location ||
-          buildS3Url(process.env.S3_BUCKET_NAME!, process.env.AWS_REGION!, key);
-        console.log('publicUrl:', publicUrl);
-
-        return publicUrl;
+        return buildS3Url(
+          process.env.S3_BUCKET_NAME!,
+          process.env.AWS_REGION!,
+          key
+        );
       })
     );
-    console.log('incomingFiles:', incomingFiles);
-    console.log('photoUrls:', photoUrls);
 
-    // Geocoding (timeout 10s)
+    // Geocoding
     const geocodingUrl = `https://nominatim.openstreetmap.org/search?${new URLSearchParams(
       {
-        street: address as string,
-        city: city as string,
-        country: country as string,
-        postalcode: postalCode as string,
+        street: address,
+        city,
+        country,
+        postalcode: postalCode,
         format: 'json',
         limit: '1',
       }
     ).toString()}`;
-    // console.log('geocodingUrl:', geocodingUrl);
+    // console.log('Geocoding URL:', geocodingUrl);
 
     const geocodingResponse = await axios.get(geocodingUrl, {
       headers: { 'User-Agent': 'RealEstateApp (justsomedummyemail@gmail.com)' },
-      timeout: 10000,
     });
-    // console.log('geocodingResponse.data:', geocodingResponse.data);
+    // console.log('Geocoding response data:', geocodingResponse.data);
 
     const [longitude, latitude] =
       geocodingResponse.data[0]?.lon && geocodingResponse.data[0]?.lat
@@ -397,62 +376,46 @@ export const createProperty = async (
         : [0, 0];
     // console.log('Geocoded coordinates:', { longitude, latitude });
 
-    // create location
     const [location] = await prisma.$queryRaw<Location[]>`
       INSERT INTO "Location" (address, city, state, country, "postalCode", coordinates)
       VALUES (${address}, ${city}, ${state}, ${country}, ${postalCode}, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326))
       RETURNING id, address, city, state, country, "postalCode", ST_AsText(coordinates) as coordinates;
     `;
-    // console.log('New location created:', location);
+    // console.log('new location created:', location);
 
-    // create property
     const newProperty = await prisma.property.create({
       data: {
         ...propertyData,
         photoUrls,
         locationId: location.id,
-        managerCognitoId: managerCognitoId as string,
+        managerCognitoId,
         amenities:
-          typeof (propertyData as any).amenities === 'string'
-            ? (propertyData as any).amenities.split(',')
+          typeof propertyData.amenities === 'string'
+            ? propertyData.amenities.split(',')
             : [],
         highlights:
-          typeof (propertyData as any).highlights === 'string'
-            ? (propertyData as any).highlights.split(',')
+          typeof propertyData.highlights === 'string'
+            ? propertyData.highlights.split(',')
             : [],
-        isPetsAllowed: (propertyData as any).isPetsAllowed === 'true',
-        isParkingIncluded: (propertyData as any).isParkingIncluded === 'true',
-        pricePerMonth: parseFloat((propertyData as any).pricePerMonth),
-        securityDeposit: parseFloat((propertyData as any).securityDeposit),
-        applicationFee: parseFloat((propertyData as any).applicationFee),
-        beds: parseInt((propertyData as any).beds),
-        baths: parseFloat((propertyData as any).baths),
-        squareFeet: parseInt((propertyData as any).squareFeet),
+        isPetsAllowed: propertyData.isPetsAllowed === 'true',
+        isParkingIncluded: propertyData.isParkingIncluded === 'true',
+        pricePerMonth: parseFloat(propertyData.pricePerMonth),
+        securityDeposit: parseFloat(propertyData.securityDeposit),
+        applicationFee: parseFloat(propertyData.applicationFee),
+        beds: parseInt(propertyData.beds),
+        baths: parseFloat(propertyData.baths),
+        squareFeet: parseInt(propertyData.squareFeet),
       },
-      include: {
-        location: true,
-        manager: true,
-      },
+      include: { location: true, manager: true },
     });
-    console.log('New property created:', newProperty);
+    console.log('new property created:', newProperty);
 
     res.status(201).json(newProperty);
   } catch (err: any) {
     console.log('Error creating property:', err);
-    // If parseForm failed because body was already consumed, return clear message
-    if (
-      (err && err.code === 'HPE_INVALID_METHOD') ||
-      err.message?.includes('request entity too large')
-    ) {
-      res.status(400).json({
-        message:
-          'Malformed multipart/form-data or body consumed by middleware. Ensure this route runs before any body-parsing middleware.',
-      });
-      return;
-    }
-    res.status(500).json({
-      message: err.message || 'Server error',
-    });
+    res
+      .status(500)
+      .json({ message: `Error creating property: ${err.message}` });
   }
 };
 
