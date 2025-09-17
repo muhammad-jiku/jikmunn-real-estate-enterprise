@@ -1,4 +1,4 @@
-import { HeadObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { Location, Prisma, PrismaClient } from '@prisma/client';
 import { wktToGeoJSON } from '@terraformer/wkt';
@@ -39,38 +39,38 @@ const sanitizeFilename = (filename: string): string =>
 const buildS3Url = (bucket: string, region: string, key: string) =>
   `https://${bucket}.s3.${region}.amazonaws.com/${encodeURI(key)}`;
 
-const looksLikeImage = (buf: Buffer) => {
-  if (!buf || buf.length < 4) return false;
-  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return true; // jpg
-  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47)
-    return true; // png
-  if (buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46)
-    return true; // webp (RIFF)
-  return false;
-};
+// const looksLikeImage = (buf: Buffer) => {
+//   if (!buf || buf.length < 4) return false;
+//   if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return true; // jpg
+//   if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47)
+//     return true; // png
+//   if (buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46)
+//     return true; // webp (RIFF)
+//   return false;
+// };
 
 /**
  * Accept Buffer | string (rare) and try decodes; return Buffer
  */
-const ensureBuffer = (input: Buffer | string): Buffer => {
-  if (Buffer.isBuffer(input)) return input;
-  const str = input as string;
-  try {
-    const b = Buffer.from(str, 'base64');
-    if (looksLikeImage(b)) return b;
-  } catch {}
-  try {
-    const b = Buffer.from(str, 'binary');
-    if (looksLikeImage(b)) return b;
-  } catch {}
-  return Buffer.from(str);
-};
+// const ensureBuffer = (input: Buffer | string): Buffer => {
+//   if (Buffer.isBuffer(input)) return input;
+//   const str = input as string;
+//   try {
+//     const b = Buffer.from(str, 'base64');
+//     if (looksLikeImage(b)) return b;
+//   } catch {}
+//   try {
+//     const b = Buffer.from(str, 'binary');
+//     if (looksLikeImage(b)) return b;
+//   } catch {}
+//   return Buffer.from(str);
+// };
 
 /** Utility: hex string for debug */
-const hex = (b: Buffer) => b.toString('hex');
+// const hex = (b: Buffer) => b.toString('hex');
 
 /** Replacement bytes constant */
-const REPLACEMENT_SEQ = Buffer.from([0xef, 0xbf, 0xbd]);
+// const REPLACEMENT_SEQ = Buffer.from([0xef, 0xbf, 0xbd]);
 
 /**
  * Heuristic: try to repair a buffer that has leading EF BF BD replacement bytes.
@@ -79,56 +79,56 @@ const REPLACEMENT_SEQ = Buffer.from([0xef, 0xbf, 0xbd]);
  *
  * This is a fallback / temporary repair — not a substitute for fixing the root cause.
  */
-function tryRepairBuffer(buf: Buffer) {
-  // quick check: if no replacement bytes at front or in first chunk, return as-is
-  const firstSlice = buf.slice(0, 12);
-  if (
-    !firstSlice.includes(REPLACEMENT_SEQ[0]) &&
-    !firstSlice.includes(REPLACEMENT_SEQ[1]) &&
-    !firstSlice.includes(REPLACEMENT_SEQ[2])
-  ) {
-    return { repaired: false, buffer: buf };
-  }
+// function tryRepairBuffer(buf: Buffer) {
+//   // quick check: if no replacement bytes at front or in first chunk, return as-is
+//   const firstSlice = buf.slice(0, 12);
+//   if (
+//     !firstSlice.includes(REPLACEMENT_SEQ[0]) &&
+//     !firstSlice.includes(REPLACEMENT_SEQ[1]) &&
+//     !firstSlice.includes(REPLACEMENT_SEQ[2])
+//   ) {
+//     return { repaired: false, buffer: buf };
+//   }
 
-  // Look for PNG ("504e47" = "PNG")
-  const pngIdx = buf.indexOf(Buffer.from('504e47', 'hex'));
-  if (pngIdx !== -1) {
-    // prepend the PNG magic 0x89 then from pngIdx onward
-    const repaired = Buffer.concat([Buffer.from([0x89]), buf.slice(pngIdx)]);
-    return { repaired: true, buffer: repaired };
-  }
+//   // Look for PNG ("504e47" = "PNG")
+//   const pngIdx = buf.indexOf(Buffer.from('504e47', 'hex'));
+//   if (pngIdx !== -1) {
+//     // prepend the PNG magic 0x89 then from pngIdx onward
+//     const repaired = Buffer.concat([Buffer.from([0x89]), buf.slice(pngIdx)]);
+//     return { repaired: true, buffer: repaired };
+//   }
 
-  // Look for JFIF ("4a464946") or "Exif" ("45786966")
-  const jfifIdx = buf.indexOf(Buffer.from('4a464946', 'hex'));
-  const exifIdx = buf.indexOf(Buffer.from('45786966', 'hex'));
-  const markerIndex = jfifIdx !== -1 ? jfifIdx : exifIdx !== -1 ? exifIdx : -1;
-  if (markerIndex !== -1) {
-    // Usually JFIF appears after some small header bytes; attempt to create JPEG header FFD8FF then attach tail
-    const tail = buf.slice(Math.max(0, markerIndex - 2)); // include couple of bytes before marker
-    const header = Buffer.from([0xff, 0xd8, 0xff]);
-    const repaired = Buffer.concat([header, tail]);
-    return { repaired: true, buffer: repaired };
-  }
+//   // Look for JFIF ("4a464946") or "Exif" ("45786966")
+//   const jfifIdx = buf.indexOf(Buffer.from('4a464946', 'hex'));
+//   const exifIdx = buf.indexOf(Buffer.from('45786966', 'hex'));
+//   const markerIndex = jfifIdx !== -1 ? jfifIdx : exifIdx !== -1 ? exifIdx : -1;
+//   if (markerIndex !== -1) {
+//     // Usually JFIF appears after some small header bytes; attempt to create JPEG header FFD8FF then attach tail
+//     const tail = buf.slice(Math.max(0, markerIndex - 2)); // include couple of bytes before marker
+//     const header = Buffer.from([0xff, 0xd8, 0xff]);
+//     const repaired = Buffer.concat([header, tail]);
+//     return { repaired: true, buffer: repaired };
+//   }
 
-  // Look for "WEBP" marker (57454250)
-  const webpIdx = buf.indexOf(Buffer.from('57454250', 'hex'));
-  if (webpIdx !== -1) {
-    const riffIdx = buf.indexOf(Buffer.from('52494646', 'hex')); // RIFF
-    const start = riffIdx !== -1 ? riffIdx : webpIdx;
-    const repaired = buf.slice(start);
-    return { repaired: true, buffer: repaired };
-  }
+//   // Look for "WEBP" marker (57454250)
+//   const webpIdx = buf.indexOf(Buffer.from('57454250', 'hex'));
+//   if (webpIdx !== -1) {
+//     const riffIdx = buf.indexOf(Buffer.from('52494646', 'hex')); // RIFF
+//     const start = riffIdx !== -1 ? riffIdx : webpIdx;
+//     const repaired = buf.slice(start);
+//     return { repaired: true, buffer: repaired };
+//   }
 
-  // Fallback: strip leading repeated replacement sequences
-  let pos = 0;
-  while (buf.slice(pos, pos + 3).equals(REPLACEMENT_SEQ)) pos += 3;
-  if (pos > 0 && pos < buf.length) {
-    const repaired = buf.slice(pos);
-    return { repaired: true, buffer: repaired };
-  }
+//   // Fallback: strip leading repeated replacement sequences
+//   let pos = 0;
+//   while (buf.slice(pos, pos + 3).equals(REPLACEMENT_SEQ)) pos += 3;
+//   if (pos > 0 && pos < buf.length) {
+//     const repaired = buf.slice(pos);
+//     return { repaired: true, buffer: repaired };
+//   }
 
-  return { repaired: false, buffer: buf };
-}
+//   return { repaired: false, buffer: buf };
+// }
 
 export const getProperties = async (
   req: Request,
@@ -322,58 +322,19 @@ export const createProperty = async (
   res: Response
 ): Promise<Response> => {
   try {
-    // debug: log important request headers to detect proxies
-    console.log(
-      'Incoming upload request from IP:',
-      req.ip || req.socket.remoteAddress
-    );
-    console.log(
-      'Request headers (content-type, content-encoding, transfer-encoding):',
-      req.headers['content-type'],
-      req.headers['content-encoding'],
-      req.headers['transfer-encoding']
-    );
+    console.log('Upload request from:', req.ip || req.socket.remoteAddress);
+    console.log('Content-Type:', req.headers['content-type']);
 
-    // files come from multer memoryStorage
-    let files = (req.files as Express.Multer.File[]) || [];
+    // Only get files from multer - remove fallback base64 handling
+    const files = (req.files as Express.Multer.File[]) || [];
 
-    // fallback: if client sent base64 strings in req.body.photos
-    if ((!files || files.length === 0) && req.body && req.body.photos) {
-      let arr: string[] = [];
-      try {
-        if (Array.isArray(req.body.photos)) arr = req.body.photos;
-        else arr = JSON.parse(req.body.photos);
-      } catch {
-        arr = [req.body.photos];
-      }
-
-      files = arr.map((dataUrl: string, i: number) => {
-        const m =
-          typeof dataUrl === 'string'
-            ? dataUrl.match(/^data:(.+);base64,(.*)$/)
-            : null;
-        console.log('match:', m);
-
-        if (!m) {
-          const buf = Buffer.from(String(dataUrl));
-          return {
-            buffer: buf,
-            originalname: `upload_${Date.now()}_${i}`,
-            mimetype: 'application/octet-stream',
-            size: buf.length,
-          } as unknown as Express.Multer.File;
-        }
-        const mimetype = m[1];
-        const b64 = m[2];
-        const buf = Buffer.from(b64, 'base64');
-        return {
-          buffer: buf,
-          originalname: `upload_${Date.now()}_${i}`,
-          mimetype,
-          size: buf.length,
-        } as unknown as Express.Multer.File;
-      });
-    }
+    console.log(`Received ${files.length} files`);
+    files.forEach((file, i) => {
+      const firstBytes = file.buffer.slice(0, 8).toString('hex');
+      console.log(
+        `File ${i}: ${file.originalname}, ${file.size} bytes, starts with: ${firstBytes}`
+      );
+    });
 
     const {
       address,
@@ -384,105 +345,38 @@ export const createProperty = async (
       managerCognitoId,
       ...propertyData
     } = req.body as any;
-    console.log('received property data:', req.body);
 
     if (!files || files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });
     }
 
+    // Upload files to S3 - remove repair logic since files should be clean now
     const photoUrls = await Promise.all(
       files.map(async (file) => {
-        console.log('Processing file:', file.originalname, {
-          size: (file as any).size,
-          mimetype: file.mimetype,
-        });
-        const raw = (file as any).buffer ?? null;
-        if (!raw)
-          throw new Error(
-            'No file buffer found. Ensure multer.memoryStorage() is used.'
-          );
-
-        const bodyBuffer = ensureBuffer(raw);
-
-        // debug: print first 16 bytes hex
-        try {
-          const firstBytesHex = bodyBuffer.slice(0, 16).toString('hex');
-          console.log(
-            `first 16 bytes hex for ${file.originalname}:`,
-            firstBytesHex
-          );
-        } catch (dbgErr) {
-          console.log('Could not print first bytes hex', dbgErr);
-        }
-
-        // if corrupted (EF BF BD) try repair
-        let bufferToUpload = bodyBuffer;
-        const first16 = bodyBuffer.slice(0, 16);
-        if (
-          first16.includes(0xef) ||
-          first16.includes(0xbf) ||
-          first16.includes(0xbd)
-        ) {
-          console.log(
-            `Detected replacement bytes in ${file.originalname} — attempting heuristic repair.`
-          );
-          const { repaired, buffer } = tryRepairBuffer(bodyBuffer);
-          if (repaired) {
-            console.log(
-              `Repair successful for ${file.originalname}, new first16:`,
-              buffer.slice(0, 16).toString('hex')
-            );
-            bufferToUpload = buffer;
-          } else {
-            console.log(
-              `Repair not possible for ${file.originalname}; uploading original buffer (likely broken).`
-            );
-          }
-        }
-
-        console.log('Uploading', file.originalname, {
-          reportedSize: (file as any).size,
-          bufferBytes: bufferToUpload.byteLength,
-          looksLikeImage: looksLikeImage(bufferToUpload),
-        });
-
         const sanitizedFilename = sanitizeFilename(
           file.originalname || `upload-${Date.now()}`
         );
         const key = `properties/${Date.now()}-${sanitizedFilename}`;
-        console.log('Uploading to S3 with key:', key);
+        console.log(
+          `Uploading ${file.originalname} (${file.size} bytes) as ${key}`
+        );
 
-        const params: any = {
+        const uploadParams = {
           Bucket: process.env.S3_BUCKET_NAME!,
           Key: key,
-          Body: bufferToUpload,
-          ContentType: file.mimetype || 'application/octet-stream',
-          ContentLength: bufferToUpload.byteLength,
+          Body: file.buffer, // Use original buffer directly
+          ContentType: file.mimetype,
+          ContentLength: file.buffer.length,
           CacheControl: 'max-age=31536000',
-          Metadata: { 'uploaded-by': 'api' },
+          ServerSideEncryption: 'AES256' as const,
         };
+        console.log('Upload params:', uploadParams);
 
         const uploadResult = await new Upload({
           client: s3Client,
-          params,
+          params: uploadParams,
         }).done();
-        console.log('UploadResult:', uploadResult);
-
-        // HeadObject to confirm what S3 recorded
-        try {
-          const head = await s3Client.send(
-            new HeadObjectCommand({ Bucket: params.Bucket, Key: params.Key })
-          );
-          console.log('HeadObject:', {
-            Key: params.Key,
-            ContentLength: head.ContentLength,
-            ContentType: head.ContentType,
-            ServerSideEncryption: head.ServerSideEncryption,
-            Metadata: head.Metadata,
-          });
-        } catch (hErr) {
-          console.log('HeadObject failed for', params.Key, hErr);
-        }
+        console.log('Upload result:', uploadResult);
 
         return (
           (uploadResult as any).Location ||
@@ -491,7 +385,7 @@ export const createProperty = async (
       })
     );
 
-    // Geocoding (unchanged)
+    // Geocoding
     const geocodingUrl = `https://nominatim.openstreetmap.org/search?${new URLSearchParams(
       {
         street: address,
