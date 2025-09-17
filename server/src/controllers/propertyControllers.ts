@@ -4,7 +4,6 @@ import { Location, Prisma, PrismaClient } from '@prisma/client';
 import { wktToGeoJSON } from '@terraformer/wkt';
 import axios from 'axios';
 import { Request, Response } from 'express';
-import multer from 'multer';
 
 const prisma = new PrismaClient();
 
@@ -17,17 +16,124 @@ const s3Client = new S3Client({
 });
 
 /** Multer setup (memoryStorage) **/
-export const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB
-  fileFilter: (_req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-    if (!allowed.includes(file.mimetype)) {
-      return cb(new Error('Only jpg, jpeg, png and webp files are allowed'));
+// export const upload = multer({
+//   storage: multer.memoryStorage(),
+//   limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB
+//   fileFilter: (_req, file, cb) => {
+//     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+//     if (!allowed.includes(file.mimetype)) {
+//       return cb(new Error('Only jpg, jpeg, png and webp files are allowed'));
+//     }
+//     cb(null, true);
+//   },
+// });
+
+// Multipart form data parser
+const parseMultipartFormData = (
+  req: Request
+): {
+  fields: Record<string, string>;
+  files: Array<{ filename: string; buffer: Buffer; mimetype: string }>;
+} => {
+  const body = req.body as Buffer;
+  const boundary = extractBoundary(req.headers['content-type'] || '');
+
+  if (!boundary) {
+    throw new Error('No boundary found in Content-Type header');
+  }
+
+  const parts = splitParts(body, boundary);
+  const fields: Record<string, string> = {};
+  const files: Array<{ filename: string; buffer: Buffer; mimetype: string }> =
+    [];
+
+  for (const part of parts) {
+    const { headers, data } = parsePart(part);
+    const contentDisposition = headers['content-disposition'];
+
+    if (!contentDisposition) continue;
+
+    const nameMatch = contentDisposition.match(/name="([^"]+)"/);
+    if (!nameMatch) continue;
+
+    const fieldName = nameMatch[1];
+
+    if (contentDisposition.includes('filename="')) {
+      // This is a file
+      const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
+      const contentType = headers['content-type'] || 'application/octet-stream';
+
+      if (filenameMatch) {
+        files.push({
+          filename: filenameMatch[1],
+          buffer: data,
+          mimetype: contentType,
+        });
+      }
+    } else {
+      // This is a regular field
+      fields[fieldName] = data.toString('utf-8');
     }
-    cb(null, true);
-  },
-});
+  }
+
+  return { fields, files };
+};
+
+const extractBoundary = (contentType: string): string | null => {
+  const boundaryMatch = contentType.match(/boundary=([^;]+)/);
+  return boundaryMatch ? boundaryMatch[1] : null;
+};
+
+const splitParts = (body: Buffer, boundary: string): Buffer[] => {
+  const boundaryBuffer = Buffer.from(`--${boundary}`);
+  const endBoundaryBuffer = Buffer.from(`--${boundary}--`);
+  const parts: Buffer[] = [];
+  let currentPosition = 0;
+
+  while (currentPosition < body.length) {
+    const boundaryIndex = body.indexOf(boundaryBuffer, currentPosition);
+    if (boundaryIndex === -1) break;
+
+    const nextBoundaryIndex = body.indexOf(
+      boundaryBuffer,
+      boundaryIndex + boundaryBuffer.length
+    );
+    if (nextBoundaryIndex === -1) break;
+
+    const part = body.slice(
+      boundaryIndex + boundaryBuffer.length,
+      nextBoundaryIndex
+    );
+    parts.push(part);
+    currentPosition = nextBoundaryIndex + boundaryBuffer.length;
+  }
+
+  return parts;
+};
+
+const parsePart = (
+  part: Buffer
+): { headers: Record<string, string>; data: Buffer } => {
+  const headerEnd = part.indexOf(Buffer.from('\r\n\r\n'));
+  if (headerEnd === -1) {
+    return { headers: {}, data: part };
+  }
+
+  const headerData = part.slice(0, headerEnd).toString('utf-8');
+  const data = part.slice(headerEnd + 4);
+
+  const headers: Record<string, string> = {};
+  headerData.split('\r\n').forEach((line) => {
+    const colonIndex = line.indexOf(':');
+    if (colonIndex > 0) {
+      const key = line.slice(0, colonIndex).trim().toLowerCase();
+      const value = line.slice(colonIndex + 1).trim();
+      headers[key] = value;
+    }
+  });
+
+  return { headers, data };
+};
 
 /** Helpers **/
 const sanitizeFilename = (filename: string): string =>
@@ -322,7 +428,9 @@ export const createProperty = async (
   res: Response
 ): Promise<Response> => {
   try {
-    const files = (req.files as Express.Multer.File[]) || [];
+    // const files = (req.files as Express.Multer.File[]) || [];
+    // Parse multipart form data manually
+    const { fields, files } = parseMultipartFormData(req);
     const {
       address,
       city,
@@ -331,26 +439,68 @@ export const createProperty = async (
       postalCode,
       managerCognitoId,
       ...propertyData
-    } = req.body as any;
+      // } = req.body as any;
+    } = fields as any;
     console.log('req.body::', req.body);
     console.log('files::', files);
+    console.log('Parsed fields:', fields);
+    console.log('Parsed files count:', files.length);
 
     if (!files || files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });
     }
 
+    // const photoUrls = await Promise.all(
+    //   files.map(async (file) => {
+    //     const sanitizedFilename = sanitizeFilename(file.originalname);
+    //     const key = `properties/${Date.now()}-${sanitizedFilename}`;
+
+    //     const uploadParams = {
+    //       Bucket: process.env.S3_BUCKET_NAME!,
+    //       Key: key,
+    //       Body: file.buffer,
+    //       ContentType: file.mimetype,
+    //       ACL: 'public-read' as const,
+    //       CacheControl: 'max-age=31536000',
+    //     };
+    //     console.log('uploade params:', uploadParams);
+
+    //     const uploadResult = await new Upload({
+    //       client: s3Client,
+    //       params: uploadParams,
+    //     }).done();
+    //     console.log('Upload result:', uploadResult);
+
+    //     return (
+    //       uploadResult.Location ||
+    //       `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
+    //     );
+    //   })
+    // );
+
     const photoUrls = await Promise.all(
       files.map(async (file) => {
-        const sanitizedFilename = sanitizeFilename(file.originalname);
+        const sanitizedFilename = sanitizeFilename(file.filename);
         const key = `properties/${Date.now()}-${sanitizedFilename}`;
+
+        console.log(
+          'Uploading file:',
+          file.filename,
+          'Size:',
+          file.buffer.length,
+          'bytes'
+        );
+        console.log(
+          'First 16 bytes (hex):',
+          file.buffer.slice(0, 16).toString('hex')
+        );
 
         const uploadParams = {
           Bucket: process.env.S3_BUCKET_NAME!,
           Key: key,
           Body: file.buffer,
           ContentType: file.mimetype,
-          ACL: 'public-read' as const,
-          CacheControl: 'max-age=31536000',
+          CacheControl: 'max-age-31536000',
         };
         console.log('uploade params:', uploadParams);
 
