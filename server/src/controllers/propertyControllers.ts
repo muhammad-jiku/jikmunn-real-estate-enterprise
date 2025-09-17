@@ -36,8 +36,8 @@ const sanitizeFilename = (filename: string): string =>
     .replace(/_{2,}/g, '_')
     .toLowerCase();
 
-const buildS3Url = (bucket: string, region: string, key: string) =>
-  `https://${bucket}.s3.${region}.amazonaws.com/${encodeURI(key)}`;
+// const buildS3Url = (bucket: string, region: string, key: string) =>
+//   `https://${bucket}.s3.${region}.amazonaws.com/${encodeURI(key)}`;
 
 // const looksLikeImage = (buf: Buffer) => {
 //   if (!buf || buf.length < 4) return false;
@@ -322,20 +322,7 @@ export const createProperty = async (
   res: Response
 ): Promise<Response> => {
   try {
-    console.log('Upload request from:', req.ip || req.socket.remoteAddress);
-    console.log('Content-Type:', req.headers['content-type']);
-
-    // Only get files from multer - remove fallback base64 handling
     const files = (req.files as Express.Multer.File[]) || [];
-
-    console.log(`Received ${files.length} files`);
-    files.forEach((file, i) => {
-      const firstBytes = file.buffer.slice(0, 8).toString('hex');
-      console.log(
-        `File ${i}: ${file.originalname}, ${file.size} bytes, starts with: ${firstBytes}`
-      );
-    });
-
     const {
       address,
       city,
@@ -345,32 +332,26 @@ export const createProperty = async (
       managerCognitoId,
       ...propertyData
     } = req.body as any;
+    console.log('req.body::', req.body);
+    console.log('files::', files);
 
     if (!files || files.length === 0) {
       return res.status(400).json({ message: 'No files uploaded' });
     }
 
-    // Upload files to S3 - remove repair logic since files should be clean now
     const photoUrls = await Promise.all(
       files.map(async (file) => {
-        const sanitizedFilename = sanitizeFilename(
-          file.originalname || `upload-${Date.now()}`
-        );
+        const sanitizedFilename = sanitizeFilename(file.originalname);
         const key = `properties/${Date.now()}-${sanitizedFilename}`;
-        console.log(
-          `Uploading ${file.originalname} (${file.size} bytes) as ${key}`
-        );
 
         const uploadParams = {
           Bucket: process.env.S3_BUCKET_NAME!,
           Key: key,
-          Body: file.buffer, // Use original buffer directly
+          Body: file.buffer,
           ContentType: file.mimetype,
-          ContentLength: file.buffer.length,
+          ACL: 'public-read' as const,
           CacheControl: 'max-age=31536000',
-          ServerSideEncryption: 'AES256' as const,
         };
-        console.log('Upload params:', uploadParams);
 
         const uploadResult = await new Upload({
           client: s3Client,
@@ -379,13 +360,12 @@ export const createProperty = async (
         console.log('Upload result:', uploadResult);
 
         return (
-          (uploadResult as any).Location ||
-          buildS3Url(process.env.S3_BUCKET_NAME!, process.env.AWS_REGION!, key)
+          uploadResult.Location ||
+          `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
         );
       })
     );
 
-    // Geocoding
     const geocodingUrl = `https://nominatim.openstreetmap.org/search?${new URLSearchParams(
       {
         street: address,
@@ -401,6 +381,7 @@ export const createProperty = async (
       headers: { 'User-Agent': 'RealEstateApp (justsomedummyemail@gmail.com)' },
       timeout: 10000,
     });
+    console.log('Geocoding response data:', geocodingResponse.data);
 
     const [longitude, latitude] =
       geocodingResponse.data?.[0]?.lon && geocodingResponse.data?.[0]?.lat
@@ -409,15 +390,15 @@ export const createProperty = async (
             parseFloat(geocodingResponse.data[0].lat),
           ]
         : [0, 0];
+    console.log('Geocoding result:', { longitude, latitude });
 
-    // create location
     const [location] = await prisma.$queryRaw<Location[]>`
       INSERT INTO "Location" (address, city, state, country, "postalCode", coordinates)
       VALUES (${address}, ${city}, ${state}, ${country}, ${postalCode}, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326))
       RETURNING id, address, city, state, country, "postalCode", ST_AsText(coordinates) as coordinates;
     `;
+    // console.log('new location created', location);
 
-    // create property
     const newProperty = await prisma.property.create({
       data: {
         ...propertyData,
@@ -443,7 +424,7 @@ export const createProperty = async (
       },
       include: { location: true, manager: true },
     });
-    // console.log('new property created:', newProperty);
+    console.log('new property created', newProperty);
 
     return res.status(201).json(newProperty);
   } catch (err: any) {

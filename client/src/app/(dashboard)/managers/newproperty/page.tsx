@@ -39,18 +39,18 @@ const NewProperty = () => {
     },
   });
 
-  // helper to convert dataURL -> File
-  const dataURLToFile = async (
-    dataurl: string,
-    filename: string
-  ): Promise<File> => {
-    console.log('data url', dataurl);
-    console.log('filename', filename);
-    // fetch works for data URLs in browsers
-    const res = await fetch(dataurl);
-    const blob = await res.blob();
-    return new File([blob], filename, { type: blob.type });
-  };
+  // // helper to convert dataURL -> File
+  // const dataURLToFile = async (
+  //   dataurl: string,
+  //   filename: string
+  // ): Promise<File> => {
+  //   console.log('data url', dataurl);
+  //   console.log('filename', filename);
+  //   // fetch works for data URLs in browsers
+  //   const res = await fetch(dataurl);
+  //   const blob = await res.blob();
+  //   return new File([blob], filename, { type: blob.type });
+  // };
 
   const onSubmit = async (data: PropertyFormData) => {
     if (!authUser?.cognitoInfo?.userId) {
@@ -60,24 +60,38 @@ const NewProperty = () => {
     const formData = new FormData();
 
     // iterate keys and append correctly
+    // for (const [key, value] of Object.entries(data)) {
+    // if (key === 'photoUrls') {
+    //   const filesOrStrings = value as any; // could be File[] or dataURL[] or mixed
+    //   if (Array.isArray(filesOrStrings)) {
+    //     for (let i = 0; i < filesOrStrings.length; i++) {
+    //       const item = filesOrStrings[i];
+    //       if (typeof item === 'string' && item.startsWith('data:')) {
+    //         // it's a base64 data URL: convert to File
+    //         const filename = `upload_${Date.now()}_${i}.jpg`;
+    //         const fileObj = await dataURLToFile(item, filename);
+    //         formData.append('photos', fileObj);
+    //       } else if (item instanceof File) {
+    //         formData.append('photos', item);
+    //       } else {
+    //         // possibly undefined / null - ignore
+    //         console.log('Skipping unsupported photoUrls item', item);
+    //       }
+    //     }
+    //   }
+    // } else if (Array.isArray(value)) {
+    //   formData.append(key, JSON.stringify(value));
+    // } else {
+    //   formData.append(key, String(value));
+    // }
+    // }
+
     for (const [key, value] of Object.entries(data)) {
       if (key === 'photoUrls') {
-        const filesOrStrings = value as any; // could be File[] or dataURL[] or mixed
-        if (Array.isArray(filesOrStrings)) {
-          for (let i = 0; i < filesOrStrings.length; i++) {
-            const item = filesOrStrings[i];
-            if (typeof item === 'string' && item.startsWith('data:')) {
-              // it's a base64 data URL: convert to File
-              const filename = `upload_${Date.now()}_${i}.jpg`;
-              const fileObj = await dataURLToFile(item, filename);
-              formData.append('photos', fileObj);
-            } else if (item instanceof File) {
-              formData.append('photos', item);
-            } else {
-              // possibly undefined / null - ignore
-              console.log('Skipping unsupported photoUrls item', item);
-            }
-          }
+        // Handle files directly - no conversion needed
+        const files = value as File[];
+        for (const file of files) {
+          formData.append('photos', file);
         }
       } else if (Array.isArray(value)) {
         formData.append(key, JSON.stringify(value));
