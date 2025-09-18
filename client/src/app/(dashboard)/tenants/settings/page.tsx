@@ -17,10 +17,8 @@ const TenantSettings = () => {
     email: authUser?.userInfo.email,
     phoneNumber: authUser?.userInfo.phoneNumber,
   };
-  // console.log('initial data in tenant settings', initialData);
 
   const handleSubmit = async (data: typeof initialData) => {
-    // console.log('data to submit in tenant settings', data);
     await updateTenant({
       cognitoId: authUser?.cognitoInfo?.userId,
       ...data,

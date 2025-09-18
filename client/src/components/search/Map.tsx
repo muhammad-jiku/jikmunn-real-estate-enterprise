@@ -17,7 +17,6 @@ const Map = () => {
     isLoading,
     isError,
   } = useGetPropertiesQuery(filters);
-  // console.log('properties data in map component', properties);
 
   useEffect(() => {
     if (isLoading || isError || !properties) return;

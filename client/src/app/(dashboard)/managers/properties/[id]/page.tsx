@@ -27,12 +27,6 @@ const LeaseRow: React.FC<{ lease: Lease }> = ({ lease }) => {
   // fetch payments for this lease (Option A)
   const { data: payments = [], isLoading: paymentsLoading } =
     useGetPaymentsQuery(lease.id);
-  console.log(
-    'Payments for lease id in properties id page',
-    lease.id,
-    ':',
-    payments
-  );
 
   const getCurrentMonthPaymentStatus = () => {
     if (paymentsLoading) return 'Loading...';
@@ -119,15 +113,12 @@ const LeaseRow: React.FC<{ lease: Lease }> = ({ lease }) => {
 const PropertyTenants = () => {
   const { id } = useParams();
   const propertyId = Number(id);
-  console.log('Property id from useParams:', id, ', as number:', propertyId);
 
   const { data: property, isLoading: propertyLoading } =
     useGetPropertyQuery(propertyId);
-  console.log('property data in properties id page:', property);
 
   const { data: leases, isLoading: leasesLoading } =
     useGetPropertyLeasesQuery(propertyId);
-  console.log('leases data in properties id page:', leases);
 
   if (propertyLoading || leasesLoading) return <Loading />;
 

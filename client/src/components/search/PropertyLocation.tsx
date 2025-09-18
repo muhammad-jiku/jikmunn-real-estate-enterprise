@@ -13,8 +13,6 @@ const PropertyLocation = ({ propertyId }: PropertyDetailsProps) => {
     isLoading,
   } = useGetPropertyQuery(propertyId);
   const mapContainerRef = useRef(null);
-  // console.log('property id in location component', propertyId);
-  // console.log('property in location component', property);
 
   useEffect(() => {
     if (isLoading || isError || !property) return;

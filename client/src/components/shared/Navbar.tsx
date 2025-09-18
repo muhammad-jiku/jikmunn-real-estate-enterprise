@@ -19,10 +19,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
 const Navbar = () => {
-  const { data: authUser } = useGetAuthUserQuery();
-  // console.log('auth user in navbar', authUser);
   const router = useRouter();
   const pathname = usePathname();
+  const { data: authUser } = useGetAuthUserQuery();
 
   const isDashboardPage =
     pathname.includes('/managers') || pathname.includes('/tenants');

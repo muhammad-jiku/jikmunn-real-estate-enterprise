@@ -41,7 +41,6 @@ export const getProperties = async (
       latitude,
       longitude,
     } = req.query;
-    // console.log('req.query::', req.query);
 
     let whereConditions: Prisma.Sql[] = [];
 
@@ -152,11 +151,10 @@ export const getProperties = async (
     `;
 
     const properties = await prisma.$queryRaw(completeQuery);
-    // console.log('get all properties:', properties);
 
-    res.json(properties);
+    res.status(200).json(properties);
   } catch (error: any) {
-    // console.log('properties error:', error);
+    console.log('error retrieving properties:', error);
     res
       .status(500)
       .json({ message: `Error retrieving properties: ${error.message}` });
@@ -169,7 +167,6 @@ export const getProperty = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    // console.log('id:', id);
 
     const property = await prisma.property.findUnique({
       where: { id: Number(id) },
@@ -177,7 +174,6 @@ export const getProperty = async (
         location: true,
       },
     });
-    // console.log('property:', property);
 
     if (property) {
       const coordinates: { coordinates: string }[] =
@@ -197,12 +193,11 @@ export const getProperty = async (
           },
         },
       };
-      // console.log('propertyWithCoordinates:', propertyWithCoordinates);
 
-      res.json(propertyWithCoordinates);
+      res.status(200).json(propertyWithCoordinates);
     }
   } catch (err: any) {
-    // console.log('error retrieving property:', err);
+    console.log('error retrieving property:', err);
     res
       .status(500)
       .json({ message: `Error retrieving property: ${err.message}` });
@@ -215,9 +210,8 @@ export const getPropertyLeases = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    console.log('Property id:', id);
     const propertyId = Number(id);
-    console.log('Property id (number):', propertyId);
+
     if (Number.isNaN(propertyId)) {
       res.status(400).json({ message: 'Invalid property id' });
       return;
@@ -233,7 +227,6 @@ export const getPropertyLeases = async (
       },
       orderBy: { startDate: 'desc' },
     });
-    console.log('Leases for property:', leases);
 
     res.status(200).json(leases);
   } catch (err: any) {
@@ -260,9 +253,8 @@ export const createProperty = async (
       managerCognitoId,
       ...propertyData
     } = req.body;
-    console.log('req.body::', req.body);
-    console.log('files::', files);
-    console.log('files count:', files.length);
+    // console.log('files:', files);
+    // console.log('files count:', files.length);
 
     if (!files || files.length === 0) {
       res.status(400).json({ message: 'No files uploaded' });
@@ -282,13 +274,13 @@ export const createProperty = async (
           // ACL: 'public-read' as const,
           // CacheControl: 'max-age=31536000',
         };
-        console.log('uploade params:', uploadParams);
+        // console.log('upload params:', uploadParams);
 
         const uploadResult = await new Upload({
           client: s3Client,
           params: uploadParams,
         }).done();
-        console.log('Upload result:', uploadResult);
+        // console.log('Upload result:', uploadResult);
 
         return (
           uploadResult.Location ||
@@ -296,7 +288,7 @@ export const createProperty = async (
         );
       })
     );
-    console.log('photoUrls::', photoUrls);
+    // console.log('photo urls:', photoUrls);
 
     const geocodingUrl = `https://nominatim.openstreetmap.org/search?${new URLSearchParams(
       {
@@ -313,7 +305,6 @@ export const createProperty = async (
       headers: { 'User-Agent': 'RealEstateApp (justsomedummyemail@gmail.com)' },
       timeout: 10000,
     });
-    // console.log('Geocoding response data:', geocodingResponse.data);
 
     const [longitude, latitude] =
       geocodingResponse.data?.[0]?.lon && geocodingResponse.data?.[0]?.lat
@@ -322,14 +313,12 @@ export const createProperty = async (
             parseFloat(geocodingResponse.data[0].lat),
           ]
         : [0, 0];
-    // console.log('Geocoding result:', { longitude, latitude });
 
     const [location] = await prisma.$queryRaw<Location[]>`
       INSERT INTO "Location" (address, city, state, country, "postalCode", coordinates)
       VALUES (${address}, ${city}, ${state}, ${country}, ${postalCode}, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326))
       RETURNING id, address, city, state, country, "postalCode", ST_AsText(coordinates) as coordinates;
     `;
-    // console.log('new location created', location);
 
     const newProperty = await prisma.property.create({
       data: {
@@ -356,11 +345,10 @@ export const createProperty = async (
       },
       include: { location: true, manager: true },
     });
-    // console.log('new property created', newProperty);
 
     res.status(201).json(newProperty);
   } catch (err: any) {
-    console.log('Error creating property:', err);
+    console.log('error creating property:', err);
     res.status(500).json({ message: err.message || 'Server error' });
   }
 };

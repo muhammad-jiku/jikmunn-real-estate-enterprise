@@ -233,20 +233,16 @@ const Residence = () => {
     isLoading: propertyLoading,
     error: propertyError,
   } = useGetPropertyQuery(Number(id));
-  // console.log('id from params', id);
-  // console.log('property data in residence page', property);
 
   const { data: leases, isLoading: leasesLoading } = useGetLeasesQuery(
     parseInt(authUser?.cognitoInfo?.userId || '0'),
     { skip: !authUser?.cognitoInfo?.userId }
   );
-  // console.log('leases data in residence page', leases);
 
   const { data: payments, isLoading: paymentsLoading } = useGetPaymentsQuery(
     leases?.[0]?.id || 0,
     { skip: !leases?.[0]?.id }
   );
-  // console.log('payments data in residence page', payments);
 
   if (propertyLoading || leasesLoading || paymentsLoading) return <Loading />;
   if (!property || propertyError) return <div>Error loading property</div>;
@@ -254,7 +250,6 @@ const Residence = () => {
   const currentLease = leases?.find(
     (lease) => lease.propertyId === property.id
   );
-  // console.log('current lease', currentLease);
 
   return (
     <div className='dashboard-container'>
