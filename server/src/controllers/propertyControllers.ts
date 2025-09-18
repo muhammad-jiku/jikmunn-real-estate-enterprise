@@ -15,121 +15,12 @@ const s3Client = new S3Client({
   },
 });
 
-/** Multer setup (memoryStorage) **/
-// export const upload = multer({
-//   storage: multer.memoryStorage(),
-//   limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB
-//   fileFilter: (_req, file, cb) => {
-//     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-//     if (!allowed.includes(file.mimetype)) {
-//       return cb(new Error('Only jpg, jpeg, png and webp files are allowed'));
-//     }
-//     cb(null, true);
-//   },
-// });
-
-// Multipart form data parser
-
 /** Helpers **/
 const sanitizeFilename = (filename: string): string =>
   filename
     .replace(/[^a-zA-Z0-9.\-]/g, '_')
     .replace(/_{2,}/g, '_')
     .toLowerCase();
-
-// const buildS3Url = (bucket: string, region: string, key: string) =>
-//   `https://${bucket}.s3.${region}.amazonaws.com/${encodeURI(key)}`;
-
-// const looksLikeImage = (buf: Buffer) => {
-//   if (!buf || buf.length < 4) return false;
-//   if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return true; // jpg
-//   if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47)
-//     return true; // png
-//   if (buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46)
-//     return true; // webp (RIFF)
-//   return false;
-// };
-
-/**
- * Accept Buffer | string (rare) and try decodes; return Buffer
- */
-// const ensureBuffer = (input: Buffer | string): Buffer => {
-//   if (Buffer.isBuffer(input)) return input;
-//   const str = input as string;
-//   try {
-//     const b = Buffer.from(str, 'base64');
-//     if (looksLikeImage(b)) return b;
-//   } catch {}
-//   try {
-//     const b = Buffer.from(str, 'binary');
-//     if (looksLikeImage(b)) return b;
-//   } catch {}
-//   return Buffer.from(str);
-// };
-
-/** Utility: hex string for debug */
-// const hex = (b: Buffer) => b.toString('hex');
-
-/** Replacement bytes constant */
-// const REPLACEMENT_SEQ = Buffer.from([0xef, 0xbf, 0xbd]);
-
-/**
- * Heuristic: try to repair a buffer that has leading EF BF BD replacement bytes.
- * - Search for PNG / JFIF / Exif / WEBP markers later in the buffer and reconstruct a plausible header.
- * - If nothing found, strip leading repeated replacement sequences and return remainder.
- *
- * This is a fallback / temporary repair — not a substitute for fixing the root cause.
- */
-// function tryRepairBuffer(buf: Buffer) {
-//   // quick check: if no replacement bytes at front or in first chunk, return as-is
-//   const firstSlice = buf.slice(0, 12);
-//   if (
-//     !firstSlice.includes(REPLACEMENT_SEQ[0]) &&
-//     !firstSlice.includes(REPLACEMENT_SEQ[1]) &&
-//     !firstSlice.includes(REPLACEMENT_SEQ[2])
-//   ) {
-//     return { repaired: false, buffer: buf };
-//   }
-
-//   // Look for PNG ("504e47" = "PNG")
-//   const pngIdx = buf.indexOf(Buffer.from('504e47', 'hex'));
-//   if (pngIdx !== -1) {
-//     // prepend the PNG magic 0x89 then from pngIdx onward
-//     const repaired = Buffer.concat([Buffer.from([0x89]), buf.slice(pngIdx)]);
-//     return { repaired: true, buffer: repaired };
-//   }
-
-//   // Look for JFIF ("4a464946") or "Exif" ("45786966")
-//   const jfifIdx = buf.indexOf(Buffer.from('4a464946', 'hex'));
-//   const exifIdx = buf.indexOf(Buffer.from('45786966', 'hex'));
-//   const markerIndex = jfifIdx !== -1 ? jfifIdx : exifIdx !== -1 ? exifIdx : -1;
-//   if (markerIndex !== -1) {
-//     // Usually JFIF appears after some small header bytes; attempt to create JPEG header FFD8FF then attach tail
-//     const tail = buf.slice(Math.max(0, markerIndex - 2)); // include couple of bytes before marker
-//     const header = Buffer.from([0xff, 0xd8, 0xff]);
-//     const repaired = Buffer.concat([header, tail]);
-//     return { repaired: true, buffer: repaired };
-//   }
-
-//   // Look for "WEBP" marker (57454250)
-//   const webpIdx = buf.indexOf(Buffer.from('57454250', 'hex'));
-//   if (webpIdx !== -1) {
-//     const riffIdx = buf.indexOf(Buffer.from('52494646', 'hex')); // RIFF
-//     const start = riffIdx !== -1 ? riffIdx : webpIdx;
-//     const repaired = buf.slice(start);
-//     return { repaired: true, buffer: repaired };
-//   }
-
-//   // Fallback: strip leading repeated replacement sequences
-//   let pos = 0;
-//   while (buf.slice(pos, pos + 3).equals(REPLACEMENT_SEQ)) pos += 3;
-//   if (pos > 0 && pos < buf.length) {
-//     const repaired = buf.slice(pos);
-//     return { repaired: true, buffer: repaired };
-//   }
-
-//   return { repaired: false, buffer: buf };
-// }
 
 export const getProperties = async (
   req: Request,
@@ -315,6 +206,41 @@ export const getProperty = async (
     res
       .status(500)
       .json({ message: `Error retrieving property: ${err.message}` });
+  }
+};
+
+export const getPropertyLeases = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    console.log('Property id:', id);
+    const propertyId = Number(id);
+    console.log('Property id (number):', propertyId);
+    if (Number.isNaN(propertyId)) {
+      res.status(400).json({ message: 'Invalid property id' });
+      return;
+    }
+
+    // Fetch leases for the property. Include tenant and payments so frontend can
+    // determine current-month payment status from a single response.
+    const leases = await prisma.lease.findMany({
+      where: { propertyId },
+      include: {
+        tenant: true, // tenant info: name, email, phoneNumber...
+        payments: true, // array of payments for each lease
+      },
+      orderBy: { startDate: 'desc' },
+    });
+    console.log('Leases for property:', leases);
+
+    res.status(200).json(leases);
+  } catch (err: any) {
+    console.log('Error retrieving leases for property:', err);
+    res
+      .status(500)
+      .json({ message: `Error retrieving property leases: ${err.message}` });
   }
 };
 

@@ -4,6 +4,7 @@ import {
   createProperty,
   getProperties,
   getProperty,
+  getPropertyLeases,
 } from '../controllers/propertyControllers';
 import { authMiddleware } from '../middleware/authMiddleware';
 
@@ -18,5 +19,7 @@ router
   .get(getProperties);
 
 router.route('/:id').get(getProperty);
+
+router.route('/:id/leases').get(authMiddleware(['manager']), getPropertyLeases);
 
 export default router;
