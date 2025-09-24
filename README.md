@@ -2,7 +2,7 @@
 
 _A full-stack real estate management platform built with Next.js, Express, PostgreSQL, and AWS._
 
-Jikmunn Real Estate Enterprise is a real estate application that enables tenants to sign in, search for suitable properties, and complete purchases seamlessly. Managers can use the platform to efficiently oversee and manage leases.
+Rentiful is a real estate application built under the Jikmunn Real Estate Enterprise project. It enables tenants to sign in, search for suitable properties, and complete purchases seamlessly, while managers can efficiently oversee and manage leases.
 
 [![IMAGE ALT TEXT HERE](https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/banner.png)](https://main.d3rbuo7pe8yfmf.amplifyapp.com/)  
 👉 Click the image to visit the site.
@@ -88,8 +88,8 @@ Create an `.env` file inside the `server` folder:
 ```bash
 AWS_REGION= # Your AWS Region
 S3_BUCKET_NAME= # Your S3 Bucket Name
-AWS_ACCESS_KEY_ID= # Your AWS Account Access Key
-AWS_SECRET_ACCESS_KEY= # Your AWS Account Secret Access Key
+AWS_ACCESS_KEY_ID= # Your AWS IAM Account Access Key
+AWS_SECRET_ACCESS_KEY= # Your AWS IAM Account Secret Access Key
 DATABASE_URL= # Your RDS PostgreSQL Database URL
 ```
 
