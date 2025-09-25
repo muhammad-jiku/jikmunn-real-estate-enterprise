@@ -148,7 +148,6 @@ const getProperties = async (req: Request, res: Response): Promise<void> => {
     `;
 
     const properties = await prisma.$queryRaw(completeQuery);
-    console.log('properties:', properties);
 
     res.status(200).json(properties);
   } catch (error: any) {

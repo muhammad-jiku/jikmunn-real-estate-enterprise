@@ -82,7 +82,6 @@ const getManagerProperties = async (
         location: true,
       },
     });
-    console.log('manager properties:', properties);
 
     const propertiesWithFormattedLocation = await Promise.all(
       properties.map(async (property) => {
