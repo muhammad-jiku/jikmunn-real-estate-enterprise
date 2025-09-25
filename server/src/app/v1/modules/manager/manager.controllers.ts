@@ -4,10 +4,7 @@ import { Request, Response } from 'express';
 
 const prisma = new PrismaClient();
 
-export const getManager = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+const getManager = async (req: Request, res: Response): Promise<void> => {
   try {
     const { cognitoId } = req.params;
 
@@ -28,10 +25,7 @@ export const getManager = async (
   }
 };
 
-export const createManager = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+const createManager = async (req: Request, res: Response): Promise<void> => {
   try {
     const { cognitoId, name, email, phoneNumber } = req.body;
 
@@ -53,10 +47,7 @@ export const createManager = async (
   }
 };
 
-export const updateManager = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+const updateManager = async (req: Request, res: Response): Promise<void> => {
   try {
     const { cognitoId } = req.params;
     const { name, email, phoneNumber } = req.body;
@@ -78,7 +69,7 @@ export const updateManager = async (
   }
 };
 
-export const getManagerProperties = async (
+const getManagerProperties = async (
   req: Request,
   res: Response
 ): Promise<void> => {
@@ -91,6 +82,7 @@ export const getManagerProperties = async (
         location: true,
       },
     });
+    console.log('manager properties:', properties);
 
     const propertiesWithFormattedLocation = await Promise.all(
       properties.map(async (property) => {
@@ -121,4 +113,11 @@ export const getManagerProperties = async (
       .status(500)
       .json({ message: `Error retrieving manager properties: ${err.message}` });
   }
+};
+
+export const ManagerControllers = {
+  getManager,
+  createManager,
+  updateManager,
+  getManagerProperties,
 };

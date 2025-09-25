@@ -3,10 +3,7 @@ import { Request, Response } from 'express';
 
 const prisma = new PrismaClient();
 
-export const listApplications = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+const listApplications = async (req: Request, res: Response): Promise<void> => {
   try {
     const { userId, userType } = req.query;
 
@@ -85,7 +82,7 @@ export const listApplications = async (
   }
 };
 
-export const createApplication = async (
+const createApplication = async (
   req: Request,
   res: Response
 ): Promise<void> => {
@@ -168,7 +165,7 @@ export const createApplication = async (
   }
 };
 
-export const updateApplicationStatus = async (
+const updateApplicationStatus = async (
   req: Request,
   res: Response
 ): Promise<void> => {
@@ -248,4 +245,10 @@ export const updateApplicationStatus = async (
       .status(500)
       .json({ message: `Error updating application status: ${error.message}` });
   }
+};
+
+export const ApplicationControllers = {
+  listApplications,
+  createApplication,
+  updateApplicationStatus,
 };

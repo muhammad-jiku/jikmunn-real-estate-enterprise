@@ -4,7 +4,7 @@ import { Request, Response } from 'express';
 
 const prisma = new PrismaClient();
 
-export const getTenant = async (req: Request, res: Response): Promise<void> => {
+const getTenant = async (req: Request, res: Response): Promise<void> => {
   try {
     const { cognitoId } = req.params;
 
@@ -28,10 +28,7 @@ export const getTenant = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const createTenant = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+const createTenant = async (req: Request, res: Response): Promise<void> => {
   try {
     const { cognitoId, name, email, phoneNumber } = req.body;
 
@@ -53,10 +50,7 @@ export const createTenant = async (
   }
 };
 
-export const updateTenant = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+const updateTenant = async (req: Request, res: Response): Promise<void> => {
   try {
     const { cognitoId } = req.params;
     const { name, email, phoneNumber } = req.body;
@@ -79,7 +73,7 @@ export const updateTenant = async (
   }
 };
 
-export const getCurrentResidences = async (
+const getCurrentResidences = async (
   req: Request,
   res: Response
 ): Promise<void> => {
@@ -124,7 +118,7 @@ export const getCurrentResidences = async (
   }
 };
 
-export const addFavoriteProperty = async (
+const addFavoriteProperty = async (
   req: Request,
   res: Response
 ): Promise<void> => {
@@ -167,7 +161,7 @@ export const addFavoriteProperty = async (
   }
 };
 
-export const removeFavoriteProperty = async (
+const removeFavoriteProperty = async (
   req: Request,
   res: Response
 ): Promise<void> => {
@@ -192,4 +186,13 @@ export const removeFavoriteProperty = async (
       .status(500)
       .json({ message: `Error removing favorite property: ${err.message}` });
   }
+};
+
+export const TenantControllers = {
+  getTenant,
+  createTenant,
+  updateTenant,
+  getCurrentResidences,
+  addFavoriteProperty,
+  removeFavoriteProperty,
 };

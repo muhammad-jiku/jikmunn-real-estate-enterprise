@@ -22,10 +22,7 @@ const sanitizeFilename = (filename: string): string =>
     .replace(/_{2,}/g, '_')
     .toLowerCase();
 
-export const getProperties = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+const getProperties = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
       favoriteIds,
@@ -151,6 +148,7 @@ export const getProperties = async (
     `;
 
     const properties = await prisma.$queryRaw(completeQuery);
+    console.log('properties:', properties);
 
     res.status(200).json(properties);
   } catch (error: any) {
@@ -161,10 +159,7 @@ export const getProperties = async (
   }
 };
 
-export const getProperty = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+const getProperty = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -204,7 +199,7 @@ export const getProperty = async (
   }
 };
 
-export const getPropertyLeases = async (
+const getPropertyLeases = async (
   req: Request,
   res: Response
 ): Promise<void> => {
@@ -237,10 +232,7 @@ export const getPropertyLeases = async (
   }
 };
 
-export const createProperty = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+const createProperty = async (req: Request, res: Response): Promise<void> => {
   try {
     const files = (req.files as Express.Multer.File[]) || [];
 
@@ -351,4 +343,11 @@ export const createProperty = async (
     console.log('error creating property:', err);
     res.status(500).json({ message: err.message || 'Server error' });
   }
+};
+
+export const PropertyControllers = {
+  getProperties,
+  getProperty,
+  getPropertyLeases,
+  createProperty,
 };

@@ -17,7 +17,7 @@ declare global {
   }
 }
 
-export const authMiddleware = (allowedRoles: string[]) => {
+export const auth = (allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     const token = req.headers.authorization?.split(' ')[1];
 
