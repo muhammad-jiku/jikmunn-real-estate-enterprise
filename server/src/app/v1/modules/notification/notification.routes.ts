@@ -8,13 +8,21 @@ const router = express.Router();
 router.get('/:cognitoId', auth(['tenant', 'manager']), NotificationControllers.getNotifications);
 
 // Get unread count
-router.get('/:cognitoId/unread-count', auth(['tenant', 'manager']), NotificationControllers.getUnreadCount);
+router.get(
+  '/:cognitoId/unread-count',
+  auth(['tenant', 'manager']),
+  NotificationControllers.getUnreadCount
+);
 
 // Mark notification as read
 router.put('/:id/read', auth(['tenant', 'manager']), NotificationControllers.markAsRead);
 
 // Mark all as read
-router.put('/:cognitoId/read-all', auth(['tenant', 'manager']), NotificationControllers.markAllAsRead);
+router.put(
+  '/:cognitoId/read-all',
+  auth(['tenant', 'manager']),
+  NotificationControllers.markAllAsRead
+);
 
 // Delete notification
 router.delete('/:id', auth(['tenant', 'manager']), NotificationControllers.deleteNotification);

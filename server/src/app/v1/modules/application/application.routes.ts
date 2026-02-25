@@ -9,9 +9,7 @@ router
   .post(auth(['tenant']), ApplicationControllers.createApplication)
   .get(auth(['manager', 'tenant']), ApplicationControllers.listApplications);
 
-router
-  .route('/:id/status')
-  .put(auth(['manager']), ApplicationControllers.updateApplicationStatus);
+router.route('/:id/status').put(auth(['manager']), ApplicationControllers.updateApplicationStatus);
 
 // Get initial payment details for an approved application
 router

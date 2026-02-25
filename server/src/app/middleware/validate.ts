@@ -14,7 +14,7 @@ export const validate = (schema: z.ZodSchema) => {
     } catch (error) {
       if (error instanceof ZodError) {
         const errors: Record<string, string[]> = {};
-        
+
         error.issues.forEach((err) => {
           const path = err.path.join('.');
           if (!errors[path]) {

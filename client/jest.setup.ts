@@ -19,7 +19,6 @@ jest.mock('next/image', () => ({
   __esModule: true,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   default: function MockImage(props: any) {
-     
     return React.createElement('img', { ...props, src: props.src as string });
   },
 }));

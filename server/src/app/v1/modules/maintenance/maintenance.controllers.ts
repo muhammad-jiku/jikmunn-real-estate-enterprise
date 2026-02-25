@@ -2,7 +2,10 @@ import { MaintenanceStatus, PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
 import { AuditActions, AuditEntities, createAuditLog } from '../../../../lib/auditLog';
 import { toMaintenanceRequestDTO } from '../../../../lib/dto';
-import { notifyMaintenanceUpdate, notifyNewMaintenanceRequest } from '../../../../lib/notifications';
+import {
+  notifyMaintenanceUpdate,
+  notifyNewMaintenanceRequest,
+} from '../../../../lib/notifications';
 import { sendSuccess } from '../../../../lib/response';
 import { asyncHandler, ForbiddenError, NotFoundError } from '../../../middleware/errorHandler';
 
@@ -61,7 +64,12 @@ const getPropertyRequests = asyncHandler(async (req: Request, res: Response): Pr
   // Transform to DTOs
   const requestsDTO = requests.map((req) => ({
     ...toMaintenanceRequestDTO(req),
-    tenant: { id: req.tenant.id, name: req.tenant.name, email: req.tenant.email, phoneNumber: req.tenant.phoneNumber },
+    tenant: {
+      id: req.tenant.id,
+      name: req.tenant.name,
+      email: req.tenant.email,
+      phoneNumber: req.tenant.phoneNumber,
+    },
   }));
 
   sendSuccess(res, requestsDTO, 'Property maintenance requests retrieved successfully');
@@ -101,7 +109,12 @@ const getManagerRequests = asyncHandler(async (req: Request, res: Response): Pro
   const requestsDTO = requests.map((req) => ({
     ...toMaintenanceRequestDTO(req),
     property: { id: req.property.id, name: req.property.name },
-    tenant: { id: req.tenant.id, name: req.tenant.name, email: req.tenant.email, phoneNumber: req.tenant.phoneNumber },
+    tenant: {
+      id: req.tenant.id,
+      name: req.tenant.name,
+      email: req.tenant.email,
+      phoneNumber: req.tenant.phoneNumber,
+    },
   }));
 
   sendSuccess(res, requestsDTO, 'Manager maintenance requests retrieved successfully');
@@ -163,7 +176,12 @@ const createRequest = asyncHandler(async (req: Request, res: Response): Promise<
     req,
   });
 
-  sendSuccess(res, toMaintenanceRequestDTO(request), 'Maintenance request created successfully', 201);
+  sendSuccess(
+    res,
+    toMaintenanceRequestDTO(request),
+    'Maintenance request created successfully',
+    201
+  );
 });
 
 // Update maintenance request (manager only)
@@ -202,12 +220,7 @@ const updateRequest = asyncHandler(async (req: Request, res: Response): Promise<
 
   // Notify tenant if status changed
   if (status && status !== oldStatus) {
-    await notifyMaintenanceUpdate(
-      request.tenantCognitoId,
-      request.title,
-      status,
-      request.id
-    );
+    await notifyMaintenanceUpdate(request.tenantCognitoId, request.title, status, request.id);
   }
 
   // Audit log
@@ -222,7 +235,11 @@ const updateRequest = asyncHandler(async (req: Request, res: Response): Promise<
     req,
   });
 
-  sendSuccess(res, toMaintenanceRequestDTO(updatedRequest), 'Maintenance request updated successfully');
+  sendSuccess(
+    res,
+    toMaintenanceRequestDTO(updatedRequest),
+    'Maintenance request updated successfully'
+  );
 });
 
 export const MaintenanceControllers = {

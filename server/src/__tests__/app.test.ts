@@ -5,12 +5,12 @@ import request from 'supertest';
 const createTestApp = () => {
   const app = express();
   app.use(express.json());
-  
+
   // Health check endpoint for testing
   app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
   });
-  
+
   return app;
 };
 
@@ -24,7 +24,7 @@ describe('Express App', () => {
   describe('Health Check', () => {
     it('should return 200 for health check', async () => {
       const response = await request(app).get('/health');
-      
+
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ status: 'ok' });
     });
@@ -33,7 +33,7 @@ describe('Express App', () => {
   describe('404 Handler', () => {
     it('should return 404 for unknown routes', async () => {
       const response = await request(app).get('/unknown-route');
-      
+
       expect(response.status).toBe(404);
     });
   });

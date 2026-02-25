@@ -57,11 +57,7 @@ export const triggerNewMessage = async (
   }
 
   try {
-    await pusher.trigger(
-      getPrivateChannel(receiverId),
-      PusherEvents.NEW_MESSAGE,
-      message
-    );
+    await pusher.trigger(getPrivateChannel(receiverId), PusherEvents.NEW_MESSAGE, message);
   } catch (error) {
     console.error('Failed to trigger Pusher message event:', error);
   }
@@ -85,11 +81,7 @@ export const triggerNewNotification = async (
   }
 
   try {
-    await pusher.trigger(
-      getPrivateChannel(userId),
-      PusherEvents.NEW_NOTIFICATION,
-      notification
-    );
+    await pusher.trigger(getPrivateChannel(userId), PusherEvents.NEW_NOTIFICATION, notification);
   } catch (error) {
     console.error('Failed to trigger Pusher notification event:', error);
   }

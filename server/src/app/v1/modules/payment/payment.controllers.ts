@@ -2,70 +2,83 @@ import { PaymentStatus, PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
 import Stripe from 'stripe';
 import { config } from '../../../../config/index.config';
-import { createPaymentIntent, createBillingPortalSession as createPortalSession, findOrCreateCustomer, stripe, STRIPE_WEBHOOK_SECRET } from '../../../../config/stripe';
+import {
+  createPaymentIntent,
+  createBillingPortalSession as createPortalSession,
+  findOrCreateCustomer,
+  stripe,
+  STRIPE_WEBHOOK_SECRET,
+} from '../../../../config/stripe';
 import { AuditActions, AuditEntities, createAuditLog } from '../../../../lib/auditLog';
 import { toPaymentDTO } from '../../../../lib/dto';
 import { notifyPaymentReceived } from '../../../../lib/notifications';
 import { sendSuccess } from '../../../../lib/response';
-import { asyncHandler, BadRequestError, ForbiddenError, NotFoundError } from '../../../middleware/errorHandler';
+import {
+  asyncHandler,
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+} from '../../../middleware/errorHandler';
 
 const prisma = new PrismaClient();
 
 // Create payment intent for initial payment (before lease exists)
-const createInitialPaymentIntent = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const { applicationId } = req.body;
-  const userId = req.user?.id;
+const createInitialPaymentIntent = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const { applicationId } = req.body;
+    const userId = req.user?.id;
 
-  // Verify application exists and belongs to tenant
-  const application = await prisma.application.findUnique({
-    where: { id: Number(applicationId) },
-    include: {
-      property: true,
-      tenant: true,
-    },
-  });
+    // Verify application exists and belongs to tenant
+    const application = await prisma.application.findUnique({
+      where: { id: Number(applicationId) },
+      include: {
+        property: true,
+        tenant: true,
+      },
+    });
 
-  if (!application) {
-    throw new NotFoundError('Application not found');
+    if (!application) {
+      throw new NotFoundError('Application not found');
+    }
+
+    if (application.tenantCognitoId !== userId) {
+      throw new ForbiddenError('Not authorized for this application');
+    }
+
+    // Check if application is awaiting payment (after manager approval)
+    if ((application.status as string) !== 'AwaitingPayment') {
+      throw new BadRequestError('Application is not awaiting payment');
+    }
+
+    // Calculate total initial payment
+    const securityDeposit = application.property.securityDeposit;
+    const firstMonthRent = application.property.pricePerMonth;
+    const applicationFee = application.property.applicationFee || 0;
+    const totalAmount = securityDeposit + firstMonthRent + applicationFee;
+
+    // Create Stripe payment intent
+    const paymentIntent = await createPaymentIntent(totalAmount, 'usd', {
+      applicationId: String(applicationId),
+      tenantId: userId || '',
+      propertyId: String(application.propertyId),
+      paymentType: 'initial_payment',
+      securityDeposit: String(securityDeposit),
+      firstMonthRent: String(firstMonthRent),
+      applicationFee: String(applicationFee),
+    });
+
+    res.status(200).json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      breakdown: {
+        securityDeposit,
+        firstMonthRent,
+        applicationFee,
+        total: totalAmount,
+      },
+    });
   }
-
-  if (application.tenantCognitoId !== userId) {
-    throw new ForbiddenError('Not authorized for this application');
-  }
-
-  // Check if application is awaiting payment (after manager approval)
-  if ((application.status as string) !== 'AwaitingPayment') {
-    throw new BadRequestError('Application is not awaiting payment');
-  }
-
-  // Calculate total initial payment
-  const securityDeposit = application.property.securityDeposit;
-  const firstMonthRent = application.property.pricePerMonth;
-  const applicationFee = application.property.applicationFee || 0;
-  const totalAmount = securityDeposit + firstMonthRent + applicationFee;
-
-  // Create Stripe payment intent
-  const paymentIntent = await createPaymentIntent(totalAmount, 'usd', {
-    applicationId: String(applicationId),
-    tenantId: userId || '',
-    propertyId: String(application.propertyId),
-    paymentType: 'initial_payment',
-    securityDeposit: String(securityDeposit),
-    firstMonthRent: String(firstMonthRent),
-    applicationFee: String(applicationFee),
-  });
-
-  res.status(200).json({
-    clientSecret: paymentIntent.client_secret,
-    paymentIntentId: paymentIntent.id,
-    breakdown: {
-      securityDeposit,
-      firstMonthRent,
-      applicationFee,
-      total: totalAmount,
-    },
-  });
-});
+);
 
 // Create payment intent for monthly rent or lease payment
 const createIntent = asyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -247,10 +260,12 @@ const getTenantPayments = asyncHandler(async (req: Request, res: Response): Prom
   // Transform to DTOs
   const paymentsDTO = payments.map((payment) => ({
     ...toPaymentDTO(payment),
-    property: payment.lease?.property ? {
-      id: payment.lease.property.id,
-      name: payment.lease.property.name,
-    } : null,
+    property: payment.lease?.property
+      ? {
+          id: payment.lease.property.id,
+          name: payment.lease.property.name,
+        }
+      : null,
     leaseId: payment.leaseId,
   }));
 
@@ -274,7 +289,7 @@ const getManagerPayments = asyncHandler(async (req: Request, res: Response): Pro
 
   if (propertyId) {
     whereConditions.lease = {
-      ...whereConditions.lease as object,
+      ...(whereConditions.lease as object),
       propertyId: Number(propertyId),
     };
   }
@@ -295,15 +310,19 @@ const getManagerPayments = asyncHandler(async (req: Request, res: Response): Pro
   // Transform to DTOs
   const paymentsDTO = payments.map((payment) => ({
     ...toPaymentDTO(payment),
-    property: payment.lease?.property ? {
-      id: payment.lease.property.id,
-      name: payment.lease.property.name,
-    } : null,
-    tenant: payment.lease?.tenant ? {
-      id: payment.lease.tenant.id,
-      name: payment.lease.tenant.name,
-      email: payment.lease.tenant.email,
-    } : null,
+    property: payment.lease?.property
+      ? {
+          id: payment.lease.property.id,
+          name: payment.lease.property.name,
+        }
+      : null,
+    tenant: payment.lease?.tenant
+      ? {
+          id: payment.lease.tenant.id,
+          name: payment.lease.tenant.name,
+          email: payment.lease.tenant.email,
+        }
+      : null,
     leaseId: payment.leaseId,
   }));
 
@@ -337,9 +356,8 @@ const createManualPayment = asyncHandler(async (req: Request, res: Response): Pr
   let payment;
   if (pendingPayment) {
     const newAmountPaid = pendingPayment.amountPaid + amountPaid;
-    const newStatus = newAmountPaid >= pendingPayment.amountDue 
-      ? PaymentStatus.Paid 
-      : PaymentStatus.PartiallyPaid;
+    const newStatus =
+      newAmountPaid >= pendingPayment.amountDue ? PaymentStatus.Paid : PaymentStatus.PartiallyPaid;
 
     payment = await prisma.payment.update({
       where: { id: pendingPayment.id },
@@ -377,38 +395,36 @@ const createManualPayment = asyncHandler(async (req: Request, res: Response): Pr
 });
 
 // Create billing portal session for tenant to manage payment methods
-const createBillingPortalSession = asyncHandler(async (req: Request, res: Response): Promise<void> => {
-  const userId = req.user?.id;
-  const { returnUrl } = req.body;
+const createBillingPortalSession = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user?.id;
+    const { returnUrl } = req.body;
 
-  if (!userId) {
-    throw new ForbiddenError('Not authenticated');
+    if (!userId) {
+      throw new ForbiddenError('Not authenticated');
+    }
+
+    // Find tenant
+    const tenant = await prisma.tenant.findUnique({
+      where: { cognitoId: userId },
+    });
+
+    if (!tenant) {
+      throw new NotFoundError('Tenant not found');
+    }
+
+    // Find or create Stripe customer
+    const customer = await findOrCreateCustomer(tenant.email, tenant.name, tenant.cognitoId);
+
+    // Create billing portal session
+    const session = await createPortalSession(
+      customer.id,
+      returnUrl || `${config.clientUrl}/tenants/residences`
+    );
+
+    sendSuccess(res, { url: session.url }, 'Billing portal session created');
   }
-
-  // Find tenant
-  const tenant = await prisma.tenant.findUnique({
-    where: { cognitoId: userId },
-  });
-
-  if (!tenant) {
-    throw new NotFoundError('Tenant not found');
-  }
-
-  // Find or create Stripe customer
-  const customer = await findOrCreateCustomer(
-    tenant.email,
-    tenant.name,
-    tenant.cognitoId
-  );
-
-  // Create billing portal session
-  const session = await createPortalSession(
-    customer.id,
-    returnUrl || `${config.clientUrl}/tenants/residences`
-  );
-
-  sendSuccess(res, { url: session.url }, 'Billing portal session created');
-});
+);
 
 export const PaymentControllers = {
   createIntent,

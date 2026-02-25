@@ -42,10 +42,6 @@ router.post(
 );
 
 // Create billing portal session (tenant manages payment methods)
-router.post(
-  '/billing-portal',
-  auth(['tenant']),
-  PaymentControllers.createBillingPortalSession
-);
+router.post('/billing-portal', auth(['tenant']), PaymentControllers.createBillingPortalSession);
 
 export const PaymentRoutes = router;

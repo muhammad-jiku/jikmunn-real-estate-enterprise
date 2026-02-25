@@ -14,7 +14,9 @@ export const stripe = new Stripe(config.stripe.secretKey, {
 export const STRIPE_WEBHOOK_SECRET = config.stripe.webhookSecret;
 
 if (!STRIPE_WEBHOOK_SECRET) {
-  console.info('Info: STRIPE_WEBHOOK_SECRET not set. Webhook endpoint will be disabled. You can add it later from Stripe Dashboard > Developers > Webhooks.');
+  console.info(
+    'Info: STRIPE_WEBHOOK_SECRET not set. Webhook endpoint will be disabled. You can add it later from Stripe Dashboard > Developers > Webhooks.'
+  );
 }
 
 // Helper functions

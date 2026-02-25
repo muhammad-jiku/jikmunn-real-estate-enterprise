@@ -55,7 +55,7 @@ export const notifyApplicationStatusChange = async (
 ) => {
   const title = `Application ${status}`;
   const message = `Your application for "${propertyName}" has been ${status.toLowerCase()}.`;
-  
+
   return createNotification({
     type: NotificationType.ApplicationStatus,
     title,
@@ -74,7 +74,7 @@ export const notifyPaymentDue = async (
 ) => {
   const title = 'Payment Due';
   const message = `Your rent payment of $${amount} for "${propertyName}" is due on ${dueDate.toLocaleDateString()}.`;
-  
+
   return createNotification({
     type: NotificationType.PaymentDue,
     title,
@@ -93,7 +93,7 @@ export const notifyPaymentReceived = async (
 ) => {
   const title = 'Payment Received';
   const message = `${tenantName} has made a payment of $${amount} for "${propertyName}".`;
-  
+
   return createNotification({
     type: NotificationType.PaymentReceived,
     title,
@@ -112,7 +112,7 @@ export const notifyLeaseExpiring = async (
 ) => {
   const title = 'Lease Expiring Soon';
   const message = `The lease for "${propertyName}" expires on ${endDate.toLocaleDateString()}.`;
-  
+
   // Notify both tenant and manager
   await createNotification({
     type: NotificationType.LeaseExpiring,
@@ -121,7 +121,7 @@ export const notifyLeaseExpiring = async (
     tenantCognitoId,
     data: { leaseId, propertyName, endDate: endDate.toISOString() },
   });
-  
+
   await createNotification({
     type: NotificationType.LeaseExpiring,
     title,
@@ -139,7 +139,7 @@ export const notifyMaintenanceUpdate = async (
 ) => {
   const notificationTitle = 'Maintenance Update';
   const message = `Your maintenance request "${title}" has been updated to: ${status}.`;
-  
+
   return createNotification({
     type: NotificationType.MaintenanceUpdate,
     title: notificationTitle,
@@ -158,20 +158,20 @@ export const notifyNewMessage = async (
 ) => {
   const title = 'New Message';
   const message = `${senderName}: ${messagePreview.substring(0, 50)}${messagePreview.length > 50 ? '...' : ''}`;
-  
+
   const params: CreateNotificationParams = {
     type: NotificationType.NewMessage,
     title,
     message,
     data: { messageId, senderName },
   };
-  
+
   if (recipientType === 'tenant') {
     params.tenantCognitoId = recipientCognitoId;
   } else {
     params.managerCognitoId = recipientCognitoId;
   }
-  
+
   return createNotification(params);
 };
 
@@ -183,7 +183,7 @@ export const notifyNewReview = async (
 ) => {
   const title = 'New Review';
   const message = `A new ${rating}-star review has been posted for "${propertyName}".`;
-  
+
   return createNotification({
     type: NotificationType.NewReview,
     title,
@@ -201,7 +201,7 @@ export const notifyNewApplication = async (
 ) => {
   const title = 'New Application';
   const message = `${tenantName} has submitted an application for "${propertyName}".`;
-  
+
   return createNotification({
     type: NotificationType.NewApplication,
     title,
@@ -220,7 +220,7 @@ export const notifyNewMaintenanceRequest = async (
 ) => {
   const title = 'New Maintenance Request';
   const message = `${tenantName} has submitted a maintenance request "${requestTitle}" for "${propertyName}".`;
-  
+
   return createNotification({
     type: NotificationType.NewMaintenanceRequest,
     title,
@@ -239,7 +239,7 @@ export const notifyPropertyCreated = async (
 ) => {
   const title = 'New Property Available';
   const message = `${managerName} has listed a new property: "${propertyName}".`;
-  
+
   // Notify all tenants who have favorited properties from this manager
   for (const tenantCognitoId of tenantCognitoIds) {
     await createNotification({
@@ -259,11 +259,9 @@ export const notifyPropertyUpdated = async (
   changes?: string[]
 ) => {
   const title = 'Property Updated';
-  const changeText = changes && changes.length > 0 
-    ? ` Changes: ${changes.join(', ')}.` 
-    : '';
+  const changeText = changes && changes.length > 0 ? ` Changes: ${changes.join(', ')}.` : '';
   const message = `The property "${propertyName}" has been updated.${changeText}`;
-  
+
   // Notify all tenants currently living at this property
   for (const tenantCognitoId of tenantCognitoIds) {
     await createNotification({
@@ -283,7 +281,7 @@ export const notifyPropertyDeleted = async (
 ) => {
   const title = 'Property Removed';
   const message = `The property "${propertyName}" has been removed from listings.`;
-  
+
   // Notify all tenants who had favorited this property
   for (const tenantCognitoId of tenantCognitoIds) {
     await createNotification({
@@ -304,19 +302,19 @@ export const notifyProfileUpdated = async (
 ) => {
   const title = 'Profile Updated';
   const message = `Your profile has been updated. Changed fields: ${fields.join(', ')}.`;
-  
+
   const params: CreateNotificationParams = {
     type: NotificationType.ProfileUpdate,
     title,
     message,
     data: { fields, action: 'profile_updated' },
   };
-  
+
   if (recipientType === 'tenant') {
     params.tenantCognitoId = recipientCognitoId;
   } else {
     params.managerCognitoId = recipientCognitoId;
   }
-  
+
   return createNotification(params);
 };

@@ -14,9 +14,11 @@ test.describe('Authentication Flow', () => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     // Wait for the page to finish loading (loading spinner to disappear)
-    await page.waitForSelector('[class*="loading"]', { state: 'hidden', timeout: 15000 }).catch(() => {
-      // Loading might not be present, that's okay
-    });
+    await page
+      .waitForSelector('[class*="loading"]', { state: 'hidden', timeout: 15000 })
+      .catch(() => {
+        // Loading might not be present, that's okay
+      });
 
     // Page should be accessible
     await expect(page).toHaveURL(/\//);

@@ -13,7 +13,7 @@ const getNotifications = asyncHandler(async (req: Request, res: Response): Promi
   const userRole = req.user?.role;
 
   const whereConditions: Record<string, unknown> = {};
-  
+
   if (userRole === 'tenant') {
     whereConditions.tenantCognitoId = cognitoId;
   } else {
@@ -44,7 +44,7 @@ const getUnreadCount = asyncHandler(async (req: Request, res: Response): Promise
   const whereConditions: Record<string, unknown> = {
     isRead: false,
   };
-  
+
   if (userRole === 'tenant') {
     whereConditions.tenantCognitoId = cognitoId;
   } else {
@@ -73,9 +73,10 @@ const markAsRead = asyncHandler(async (req: Request, res: Response): Promise<voi
   }
 
   // Verify ownership
-  const isOwner = userRole === 'tenant' 
-    ? notification.tenantCognitoId === userId
-    : notification.managerCognitoId === userId;
+  const isOwner =
+    userRole === 'tenant'
+      ? notification.tenantCognitoId === userId
+      : notification.managerCognitoId === userId;
 
   if (!isOwner) {
     throw new ForbiddenError('Not authorized to modify this notification');
@@ -97,7 +98,7 @@ const markAllAsRead = asyncHandler(async (req: Request, res: Response): Promise<
   const whereConditions: Record<string, unknown> = {
     isRead: false,
   };
-  
+
   if (userRole === 'tenant') {
     whereConditions.tenantCognitoId = cognitoId;
   } else {
@@ -109,7 +110,11 @@ const markAllAsRead = asyncHandler(async (req: Request, res: Response): Promise<
     data: { isRead: true },
   });
 
-  sendSuccess(res, { message: 'All notifications marked as read' }, 'All notifications marked as read');
+  sendSuccess(
+    res,
+    { message: 'All notifications marked as read' },
+    'All notifications marked as read'
+  );
 });
 
 // Delete a notification
@@ -127,9 +132,10 @@ const deleteNotification = asyncHandler(async (req: Request, res: Response): Pro
   }
 
   // Verify ownership
-  const isOwner = userRole === 'tenant' 
-    ? notification.tenantCognitoId === userId
-    : notification.managerCognitoId === userId;
+  const isOwner =
+    userRole === 'tenant'
+      ? notification.tenantCognitoId === userId
+      : notification.managerCognitoId === userId;
 
   if (!isOwner) {
     throw new ForbiddenError('Not authorized to delete this notification');

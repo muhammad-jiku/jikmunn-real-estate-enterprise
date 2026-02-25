@@ -44,7 +44,9 @@ export const updatePropertySchema = z.object({
     beds: z.number().int().min(0).optional(),
     baths: z.number().min(0).optional(),
     squareFeet: z.number().int().positive().optional(),
-    propertyType: z.enum(['Rooms', 'Tinyhouse', 'Apartment', 'Villa', 'Townhouse', 'Cottage']).optional(),
+    propertyType: z
+      .enum(['Rooms', 'Tinyhouse', 'Apartment', 'Villa', 'Townhouse', 'Cottage'])
+      .optional(),
   }),
 });
 
@@ -121,7 +123,10 @@ export const createManualPaymentSchema = z.object({
   body: z.object({
     leaseId: z.number().int().positive(),
     amountPaid: z.number().positive(),
-    paymentDate: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
+    paymentDate: z
+      .string()
+      .datetime()
+      .or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
     notes: z.string().max(500).optional(),
   }),
 });

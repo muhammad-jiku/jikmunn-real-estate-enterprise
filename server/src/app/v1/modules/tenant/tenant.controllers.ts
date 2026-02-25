@@ -1,18 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
 import {
-    PrivateUserDTO,
-    PropertyDetailDTO,
-    toPrivateUserDTO,
-    toPropertyDetailDTO
+  PrivateUserDTO,
+  PropertyDetailDTO,
+  toPrivateUserDTO,
+  toPropertyDetailDTO,
 } from '../../../../lib/dto';
 import { notifyProfileUpdated } from '../../../../lib/notifications';
 import {
-    sendBadRequest,
-    sendConflict,
-    sendError,
-    sendNotFound,
-    sendSuccess
+  sendBadRequest,
+  sendConflict,
+  sendError,
+  sendNotFound,
+  sendSuccess,
 } from '../../../../lib/response';
 
 const prisma = new PrismaClient();
@@ -25,13 +25,17 @@ interface TenantWithFavoritesDTO extends PrivateUserDTO {
   favoritePropertyIds: number[];
 }
 
-function toTenantWithFavoritesDTO(
-  tenant: { id: number; name: string; email: string; phoneNumber: string; favorites?: { id: number }[] }
-): TenantWithFavoritesDTO {
+function toTenantWithFavoritesDTO(tenant: {
+  id: number;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  favorites?: { id: number }[];
+}): TenantWithFavoritesDTO {
   return {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ...toPrivateUserDTO(tenant as any),
-    favoritePropertyIds: tenant.favorites?.map(f => f.id) || [],
+    favoritePropertyIds: tenant.favorites?.map((f) => f.id) || [],
   };
 }
 
@@ -83,13 +87,13 @@ const createTenant = async (req: Request, res: Response): Promise<void> => {
     sendSuccess(res, toPrivateUserDTO(tenant), 'Tenant created successfully', 201);
   } catch (error: unknown) {
     console.error('Error creating tenant:', error);
-    
+
     // Handle unique constraint violation (user already exists)
     if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
       sendConflict(res, 'Tenant already exists');
       return;
     }
-    
+
     sendError(res, 'Error creating tenant', 500, error instanceof Error ? error : String(error));
   }
 };
@@ -103,11 +107,12 @@ const updateTenant = async (req: Request, res: Response): Promise<void> => {
     const currentTenant = await prisma.tenant.findUnique({
       where: { cognitoId },
     });
-    
+
     const changedFields: string[] = [];
     if (name && name !== currentTenant?.name) changedFields.push('name');
     if (email && email !== currentTenant?.email) changedFields.push('email');
-    if (phoneNumber && phoneNumber !== currentTenant?.phoneNumber) changedFields.push('phone number');
+    if (phoneNumber && phoneNumber !== currentTenant?.phoneNumber)
+      changedFields.push('phone number');
 
     const updateTenant = await prisma.tenant.update({
       where: { cognitoId },
@@ -135,10 +140,7 @@ const updateTenant = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-const getCurrentResidences = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+const getCurrentResidences = async (req: Request, res: Response): Promise<void> => {
   try {
     const cognitoId = req.params.cognitoId as string;
 
@@ -158,7 +160,7 @@ const getCurrentResidences = async (
     });
 
     // Transform to DTOs - strips managerCognitoId, locationId, etc.
-    const residences: PropertyDetailDTO[] = properties.map((property) => 
+    const residences: PropertyDetailDTO[] = properties.map((property) =>
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       toPropertyDetailDTO(property as any)
     );
@@ -166,14 +168,16 @@ const getCurrentResidences = async (
     sendSuccess(res, residences, 'Residences retrieved successfully');
   } catch (err: unknown) {
     console.error('Error retrieving tenant properties:', err);
-    sendError(res, 'Error retrieving tenant properties', 500, err instanceof Error ? err : String(err));
+    sendError(
+      res,
+      'Error retrieving tenant properties',
+      500,
+      err instanceof Error ? err : String(err)
+    );
   }
 };
 
-const addFavoriteProperty = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+const addFavoriteProperty = async (req: Request, res: Response): Promise<void> => {
   try {
     const cognitoId = req.params.cognitoId as string;
     const propertyId = req.params.propertyId as string;
@@ -199,7 +203,7 @@ const addFavoriteProperty = async (
             connect: { id: propertyIdNumber },
           },
         },
-        include: { 
+        include: {
           favorites: { select: { id: true } },
         },
       });
@@ -210,14 +214,16 @@ const addFavoriteProperty = async (
     }
   } catch (error: unknown) {
     console.error('Error adding favorite property:', error);
-    sendError(res, 'Error adding favorite property', 500, error instanceof Error ? error : String(error));
+    sendError(
+      res,
+      'Error adding favorite property',
+      500,
+      error instanceof Error ? error : String(error)
+    );
   }
 };
 
-const removeFavoriteProperty = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+const removeFavoriteProperty = async (req: Request, res: Response): Promise<void> => {
   try {
     const cognitoId = req.params.cognitoId as string;
     const propertyId = req.params.propertyId as string;
@@ -230,7 +236,7 @@ const removeFavoriteProperty = async (
           disconnect: { id: propertyIdNumber },
         },
       },
-      include: { 
+      include: {
         favorites: { select: { id: true } },
       },
     });
@@ -238,7 +244,12 @@ const removeFavoriteProperty = async (
     sendSuccess(res, toTenantWithFavoritesDTO(updatedTenant), 'Favorite removed successfully');
   } catch (err: unknown) {
     console.error('Error removing favorite property:', err);
-    sendError(res, 'Error removing favorite property', 500, err instanceof Error ? err : String(err));
+    sendError(
+      res,
+      'Error removing favorite property',
+      500,
+      err instanceof Error ? err : String(err)
+    );
   }
 };
 

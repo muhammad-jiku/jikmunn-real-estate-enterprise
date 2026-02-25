@@ -3,12 +3,14 @@ import { expect, test } from '@playwright/test';
 // Helper to wait for the app to finish loading
 async function waitForAppReady(page: import('@playwright/test').Page) {
   // Wait for loading spinner to disappear (if present)
-  await page.waitForSelector('[class*="loading"], [class*="Loading"]', {
-    state: 'hidden',
-    timeout: 15000,
-  }).catch(() => {
-    // Loading component might not be present, that's okay
-  });
+  await page
+    .waitForSelector('[class*="loading"], [class*="Loading"]', {
+      state: 'hidden',
+      timeout: 15000,
+    })
+    .catch(() => {
+      // Loading component might not be present, that's okay
+    });
   // Small additional wait for hydration
   await page.waitForTimeout(500);
 }

@@ -22,12 +22,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         (userRole === 'manager' && pathname.startsWith('/tenants')) ||
         (userRole === 'tenant' && pathname.startsWith('/managers'))
       ) {
-        router.push(
-          userRole === 'manager'
-            ? '/managers/properties'
-            : '/tenants/favorites',
-          { scroll: false }
-        );
+        router.push(userRole === 'manager' ? '/managers/properties' : '/tenants/favorites', {
+          scroll: false,
+        });
       } else {
         setIsLoading(false);
       }
@@ -39,14 +36,12 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <SidebarProvider>
-      <div className='min-h-screen w-full bg-primary-100'>
+      <div className="min-h-screen w-full bg-primary-100">
         <Navbar />
         <div style={{ marginTop: `${NAVBAR_HEIGHT}px` }}>
-          <main className='flex'>
+          <main className="flex">
             <Sidebar userType={authUser.userRole.toLowerCase()} />
-            <div className='flex-grow transition-all duration-300'>
-              {children}
-            </div>
+            <div className="flex-grow transition-all duration-300">{children}</div>
           </main>
         </div>
       </div>

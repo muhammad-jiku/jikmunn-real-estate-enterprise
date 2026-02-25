@@ -3,7 +3,12 @@ import { Request, Response } from 'express';
 import { AuditActions, AuditEntities, createAuditLog } from '../../../../lib/auditLog';
 import { notifyNewReview } from '../../../../lib/notifications';
 import { sendSuccess } from '../../../../lib/response';
-import { asyncHandler, ConflictError, ForbiddenError, NotFoundError } from '../../../middleware/errorHandler';
+import {
+  asyncHandler,
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+} from '../../../middleware/errorHandler';
 
 const prisma = new PrismaClient();
 
@@ -53,11 +58,13 @@ const getTenantReviews = asyncHandler(async (req: Request, res: Response): Promi
     rating: review.rating,
     comment: review.comment,
     createdAt: review.createdAt,
-    property: review.property ? {
-      id: review.property.id,
-      name: review.property.name,
-      photoUrls: review.property.photoUrls,
-    } : null,
+    property: review.property
+      ? {
+          id: review.property.id,
+          name: review.property.name,
+          photoUrls: review.property.photoUrls,
+        }
+      : null,
   }));
 
   sendSuccess(res, reviewsDTO, 'Tenant reviews retrieved successfully');
@@ -126,12 +133,7 @@ const createReview = asyncHandler(async (req: Request, res: Response): Promise<v
   });
 
   // Notify manager
-  await notifyNewReview(
-    review.property.managerCognitoId,
-    review.property.name,
-    rating,
-    review.id
-  );
+  await notifyNewReview(review.property.managerCognitoId, review.property.name, rating, review.id);
 
   // Audit log
   await createAuditLog({

@@ -8,11 +8,21 @@ const router = express.Router();
 
 // Tenant routes
 router.get('/tenant/:cognitoId', auth(['tenant']), MaintenanceControllers.getTenantRequests);
-router.post('/', auth(['tenant']), validate(createMaintenanceSchema), MaintenanceControllers.createRequest);
+router.post(
+  '/',
+  auth(['tenant']),
+  validate(createMaintenanceSchema),
+  MaintenanceControllers.createRequest
+);
 
 // Manager routes
 router.get('/property/:propertyId', auth(['manager']), MaintenanceControllers.getPropertyRequests);
 router.get('/manager/:cognitoId', auth(['manager']), MaintenanceControllers.getManagerRequests);
-router.put('/:id', auth(['manager']), validate(updateMaintenanceSchema), MaintenanceControllers.updateRequest);
+router.put(
+  '/:id',
+  auth(['manager']),
+  validate(updateMaintenanceSchema),
+  MaintenanceControllers.updateRequest
+);
 
 export const MaintenanceRoutes = router;

@@ -28,7 +28,7 @@ app.use('/api/v1', routes);
 /* SERVER */
 app.listen(config.port, '0.0.0.0', () => {
   console.info(`Server running on port http://localhost:${config.port}`);
-  
+
   // Initialize scheduled jobs in production
   if (config.env === 'production') {
     initializeScheduledJobs();
