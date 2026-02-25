@@ -4,9 +4,9 @@ import Card from '@/components/shared/card/Card';
 import Header from '@/components/shared/Header';
 import Loading from '@/components/shared/Loading';
 import {
-  useGetAuthUserQuery,
-  useGetCurrentResidencesQuery,
-  useGetTenantQuery,
+    useGetAuthUserQuery,
+    useGetCurrentResidencesQuery,
+    useGetTenantQuery,
 } from '@/state/api';
 
 const Residences = () => {
@@ -40,7 +40,7 @@ const Residences = () => {
           <Card
             key={property.id}
             property={property}
-            isFavorite={tenant?.favorites.includes(property.id) || false}
+            isFavorite={tenant?.favorites?.some((fav) => fav.id === property.id) || false}
             onFavoriteToggle={() => {}}
             showFavoriteButton={false}
             propertyLink={`/tenants/residences/${property.id}`}

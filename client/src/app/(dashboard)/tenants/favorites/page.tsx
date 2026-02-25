@@ -3,11 +3,13 @@
 import Card from '@/components/shared/card/Card';
 import Header from '@/components/shared/Header';
 import Loading from '@/components/shared/Loading';
-import {
-  useGetAuthUserQuery,
-  useGetPropertiesQuery,
-  useGetTenantQuery,
-} from '@/state/api';
+import
+  {
+    useGetAuthUserQuery,
+    useGetPropertiesQuery,
+    useGetTenantQuery,
+    useRemoveFavoritePropertyMutation,
+  } from '@/state/api';
 
 const Favorites = () => {
   const { data: authUser } = useGetAuthUserQuery();
@@ -17,6 +19,7 @@ const Favorites = () => {
       skip: !authUser?.cognitoInfo?.userId,
     }
   );
+  const [removeFavorite] = useRemoveFavoritePropertyMutation();
 
   const {
     data: favoriteProperties,
@@ -26,6 +29,14 @@ const Favorites = () => {
     { favoriteIds: tenant?.favorites?.map((fav: { id: number }) => fav.id) },
     { skip: !tenant?.favorites || tenant?.favorites.length === 0 }
   );
+
+  const handleRemoveFavorite = async (propertyId: number) => {
+    if (!authUser?.cognitoInfo?.userId) return;
+    await removeFavorite({
+      cognitoId: authUser.cognitoInfo.userId,
+      propertyId,
+    });
+  };
 
   if (isLoading) return <Loading />;
   if (error) return <div>Error loading favorites</div>;
@@ -42,8 +53,8 @@ const Favorites = () => {
             key={property.id}
             property={property}
             isFavorite={true}
-            onFavoriteToggle={() => {}}
-            showFavoriteButton={false}
+            onFavoriteToggle={() => handleRemoveFavorite(property.id)}
+            showFavoriteButton={true}
             propertyLink={`/tenants/residences/${property.id}`}
           />
         ))}

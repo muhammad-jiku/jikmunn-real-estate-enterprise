@@ -1,14 +1,15 @@
 import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { Form } from '@/components/ui/form';
 import { ApplicationFormData, applicationSchema } from '@/lib/schemas';
 import { useCreateApplicationMutation, useGetAuthUserQuery } from '@/state/api';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { CustomFormField } from '../shared/form/FormField';
 
@@ -19,6 +20,7 @@ const ApplicationModal = ({
 }: ApplicationModalProps) => {
   const [createApplication] = useCreateApplicationMutation();
   const { data: authUser } = useGetAuthUserQuery();
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
@@ -32,29 +34,50 @@ const ApplicationModal = ({
 
   const onSubmit = async (data: ApplicationFormData) => {
     if (!authUser || authUser.userRole !== 'tenant') {
-      console.error(
-        'You must be logged in as a tenant to submit an application'
-      );
+      setError('You must be logged in as a tenant to submit an application');
       return;
     }
 
-    await createApplication({
-      ...data,
-      applicationDate: new Date().toISOString(),
-      status: 'Pending',
-      propertyId: propertyId,
-      tenantCognitoId: authUser.cognitoInfo.userId,
-    });
+    setError(null);
+    
+    try {
+      const result = await createApplication({
+        ...data,
+        applicationDate: new Date().toISOString(),
+        status: 'Pending',
+        propertyId: propertyId,
+        tenantCognitoId: authUser.cognitoInfo.userId,
+      });
 
+      if ('error' in result) {
+        const errorData = result.error as { data?: { message?: string } };
+        setError(errorData.data?.message || 'Failed to submit application');
+        return;
+      }
+
+      onClose();
+    } catch {
+      setError('An unexpected error occurred');
+    }
+  };
+
+  const handleClose = () => {
+    setError(null);
+    form.reset();
     onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className='bg-white'>
         <DialogHeader className='mb-4'>
           <DialogTitle>Submit Application for this Property</DialogTitle>
         </DialogHeader>
+        {error && (
+          <div className='bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4'>
+            {error}
+          </div>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-5'>
             <CustomFormField

@@ -1,20 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,10 +27,10 @@ import 'filepond/dist/filepond.min.css';
 import { Edit, Plus, X } from 'lucide-react';
 import { FilePond } from 'react-filepond';
 import {
-  ControllerRenderProps,
-  FieldValues,
-  useFieldArray,
-  useFormContext,
+    ControllerRenderProps,
+    FieldValues,
+    useFieldArray,
+    useFormContext,
 } from 'react-hook-form';
 
 registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview);
@@ -43,6 +44,7 @@ interface FormFieldProps {
     | 'textarea'
     | 'number'
     | 'select'
+    | 'multi-select'
     | 'switch'
     | 'password'
     | 'file'
@@ -114,6 +116,58 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
               ))}
             </SelectContent>
           </Select>
+        );
+      case 'multi-select':
+        return (
+          <div className='space-y-2'>
+            <div className='flex flex-wrap gap-2 mb-2'>
+              {(field.value as string[] || []).map((item: string) => (
+                <span
+                  key={item}
+                  className='inline-flex items-center gap-1 px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm'
+                >
+                  {item}
+                  <button
+                    type='button'
+                    onClick={() => {
+                      const newValue = (field.value as string[]).filter((v: string) => v !== item);
+                      field.onChange(newValue);
+                    }}
+                    className='hover:text-primary-900 ml-1'
+                  >
+                    <X className='w-3 h-3' />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-2 border border-gray-200 rounded-lg'>
+              {options?.map((option) => {
+                const isChecked = (field.value as string[] || []).includes(option.value);
+                return (
+                  <div key={option.value} className='flex items-center space-x-2'>
+                    <Checkbox
+                      id={`${name}-${option.value}`}
+                      checked={isChecked}
+                      onCheckedChange={(checked) => {
+                        const currentValues = (field.value as string[]) || [];
+                        if (checked) {
+                          field.onChange([...currentValues, option.value]);
+                        } else {
+                          field.onChange(currentValues.filter((v: string) => v !== option.value));
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={`${name}-${option.value}`}
+                      className='text-sm cursor-pointer hover:text-primary-700'
+                    >
+                      {option.label}
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         );
       case 'switch':
         return (

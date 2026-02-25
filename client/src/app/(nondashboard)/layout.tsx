@@ -1,5 +1,6 @@
 'use client';
 
+import Loading from '@/components/shared/Loading';
 import Navbar from '@/components/shared/Navbar';
 import { NAVBAR_HEIGHT } from '@/lib/constants';
 import { useGetAuthUserQuery } from '@/state/api';
@@ -10,7 +11,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const { data: authUser, isLoading: authLoading } = useGetAuthUserQuery();
   const router = useRouter();
   const pathname = usePathname();
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isRedirecting, setIsRedirecting] = useState<boolean>(false);
 
   useEffect(() => {
     if (authUser) {
@@ -19,14 +20,14 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         (userRole === 'manager' && pathname.startsWith('/search')) ||
         (userRole === 'manager' && pathname === '/')
       ) {
+        setIsRedirecting(true);
         router.push('/managers/properties', { scroll: false });
-      } else {
-        setIsLoading(false);
       }
     }
   }, [authUser, router, pathname]);
 
-  if (authLoading || isLoading) return <>Loading...</>;
+  // Show loading only while auth is loading or redirecting
+  if (authLoading || isRedirecting) return <Loading />;
 
   return (
     <div className='h-full w-full'>

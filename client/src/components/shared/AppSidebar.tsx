@@ -1,22 +1,23 @@
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
+    Sidebar,
+    SidebarContent,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { NAVBAR_HEIGHT } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import {
-  Building,
-  FileText,
-  Heart,
-  Home,
-  Menu,
-  Settings,
-  X,
+    Building,
+    FileText,
+    Heart,
+    Home,
+    Menu,
+    MessageSquare,
+    Settings,
+    X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -34,6 +35,7 @@ const AppSidebar = ({ userType }: AppSidebarProps) => {
             label: 'Applications',
             href: '/managers/applications',
           },
+          { icon: MessageSquare, label: 'Messages', href: '/managers/messages' },
           { icon: Settings, label: 'Settings', href: '/managers/settings' },
         ]
       : [
@@ -44,6 +46,7 @@ const AppSidebar = ({ userType }: AppSidebarProps) => {
             href: '/tenants/applications',
           },
           { icon: Home, label: 'Residences', href: '/tenants/residences' },
+          { icon: MessageSquare, label: 'Messages', href: '/tenants/messages' },
           { icon: Settings, label: 'Settings', href: '/tenants/settings' },
         ];
 

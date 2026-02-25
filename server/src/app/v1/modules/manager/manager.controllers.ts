@@ -1,27 +1,34 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PrismaClient } from '@prisma/client';
-import { wktToGeoJSON } from '@terraformer/wkt';
 import { Request, Response } from 'express';
+import { toPrivateUserDTO, toPropertyListDTO } from '../../../../lib/dto';
+import { notifyProfileUpdated } from '../../../../lib/notifications';
+import {
+  sendBadRequest,
+  sendConflict,
+  sendError,
+  sendNotFound,
+  sendSuccess,
+} from '../../../../lib/response';
 
 const prisma = new PrismaClient();
 
 const getManager = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { cognitoId } = req.params;
+    const cognitoId = req.params.cognitoId as string;
 
     const manager = await prisma.manager.findUnique({
       where: { cognitoId },
     });
 
     if (manager) {
-      res.status(200).json(manager);
+      sendSuccess(res, toPrivateUserDTO(manager), 'Manager retrieved successfully');
     } else {
-      res.status(404).json({ message: 'Manager not found' });
+      sendNotFound(res, 'Manager');
     }
   } catch (error: any) {
-    console.log('error getting manager', error);
-    res
-      .status(500)
-      .json({ message: `Error retrieving manager: ${error.message}` });
+    console.error('Error getting manager:', error);
+    sendError(res, 'Error retrieving manager', 500, error);
   }
 };
 
@@ -29,28 +36,50 @@ const createManager = async (req: Request, res: Response): Promise<void> => {
   try {
     const { cognitoId, name, email, phoneNumber } = req.body;
 
+    // Validate required fields
+    if (!cognitoId || !name || !email) {
+      sendBadRequest(res, 'Missing required fields: cognitoId, name, and email are required');
+      return;
+    }
+
     const manager = await prisma.manager.create({
       data: {
         cognitoId,
         name,
         email,
-        phoneNumber,
+        phoneNumber: phoneNumber || '',
       },
     });
 
-    res.status(201).json(manager);
+    sendSuccess(res, toPrivateUserDTO(manager), 'Manager created successfully', 201);
   } catch (error: any) {
-    console.log('error creating manager:', error);
-    res
-      .status(500)
-      .json({ message: `Error creating manager: ${error.message}` });
+    console.error('Error creating manager:', error);
+
+    // Handle unique constraint violation (user already exists)
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
+      sendConflict(res, 'Manager already exists');
+      return;
+    }
+
+    sendError(res, 'Error creating manager', 500, error);
   }
 };
 
 const updateManager = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { cognitoId } = req.params;
+    const cognitoId = req.params.cognitoId as string;
     const { name, email, phoneNumber } = req.body;
+
+    // Track which fields are being updated
+    const currentManager = await prisma.manager.findUnique({
+      where: { cognitoId },
+    });
+
+    const changedFields: string[] = [];
+    if (name && name !== currentManager?.name) changedFields.push('name');
+    if (email && email !== currentManager?.email) changedFields.push('email');
+    if (phoneNumber && phoneNumber !== currentManager?.phoneNumber)
+      changedFields.push('phone number');
 
     const updateManager = await prisma.manager.update({
       where: { cognitoId },
@@ -61,20 +90,25 @@ const updateManager = async (req: Request, res: Response): Promise<void> => {
       },
     });
 
-    res.status(200).json(updateManager);
+    // Send notification about profile update
+    if (changedFields.length > 0) {
+      try {
+        await notifyProfileUpdated(cognitoId, 'manager', changedFields);
+      } catch (notifyError) {
+        console.info('Error sending profile update notification:', notifyError);
+      }
+    }
+
+    sendSuccess(res, toPrivateUserDTO(updateManager), 'Manager updated successfully');
   } catch (error: any) {
-    res
-      .status(500)
-      .json({ message: `Error updating manager: ${error.message}` });
+    console.error('Error updating manager:', error);
+    sendError(res, 'Error updating manager', 500, error);
   }
 };
 
-const getManagerProperties = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+const getManagerProperties = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { cognitoId } = req.params;
+    const cognitoId = req.params.cognitoId as string;
 
     const properties = await prisma.property.findMany({
       where: { managerCognitoId: cognitoId },
@@ -83,34 +117,14 @@ const getManagerProperties = async (
       },
     });
 
-    const propertiesWithFormattedLocation = await Promise.all(
-      properties.map(async (property) => {
-        const coordinates: { coordinates: string }[] =
-          await prisma.$queryRaw`SELECT ST_asText(coordinates) as coordinates from "Location" where id = ${property.location.id}`;
+    // Transform to DTOs
 
-        const geoJSON: any = wktToGeoJSON(coordinates[0]?.coordinates || '');
-        const longitude = geoJSON.coordinates[0];
-        const latitude = geoJSON.coordinates[1];
+    const propertiesDTO = properties.map((property) => toPropertyListDTO(property as any));
 
-        return {
-          ...property,
-          location: {
-            ...property.location,
-            coordinates: {
-              longitude,
-              latitude,
-            },
-          },
-        };
-      })
-    );
-
-    res.status(200).json(propertiesWithFormattedLocation);
+    sendSuccess(res, propertiesDTO, 'Manager properties retrieved successfully');
   } catch (err: any) {
-    console.log('error retrieving manager properties:', err);
-    res
-      .status(500)
-      .json({ message: `Error retrieving manager properties: ${err.message}` });
+    console.error('Error retrieving manager properties:', err);
+    sendError(res, 'Error retrieving manager properties', 500, err);
   }
 };
 

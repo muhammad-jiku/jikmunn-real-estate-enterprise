@@ -1,13 +1,14 @@
 'use client';
 
+import { MessageButton } from '@/components/messages/SendMessageDialog';
 import ApplicationCard from '@/components/shared/card/ApplicationCard';
 import Header from '@/components/shared/Header';
 import Loading from '@/components/shared/Loading';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  useGetApplicationsQuery,
-  useGetAuthUserQuery,
-  useUpdateApplicationStatusMutation,
+    useGetApplicationsQuery,
+    useGetAuthUserQuery,
+    useUpdateApplicationStatusMutation,
 } from '@/state/api';
 import { CircleCheckBig, Download, File, Hospital } from 'lucide-react';
 import Link from 'next/link';
@@ -118,7 +119,7 @@ const Applications = () => {
                     {/* Right Buttons */}
                     <div className='flex gap-2'>
                       <Link
-                        href={`/managers/properties/${application.property.id}`}
+                        href={`/managers/properties/${application.property?.id}`}
                         className={`bg-white border border-gray-300 text-gray-700 py-2 px-4 
                           rounded-md flex items-center justify-center hover:bg-primary-700 hover:text-primary-50`}
                         scroll={false}
@@ -156,12 +157,27 @@ const Applications = () => {
                         </>
                       )}
                       {application.status === 'Denied' && (
-                        <button
-                          className={`bg-gray-800 text-white py-2 px-4 rounded-md flex items-center
-                          justify-center hover:bg-secondary-500 hover:text-primary-50`}
-                        >
-                          Contact User
-                        </button>
+                        <MessageButton
+                          recipientId={application.tenantCognitoId}
+                          recipientName={application.tenant?.name || 'Tenant'}
+                          recipientType="tenant"
+                          propertyId={application.property?.id}
+                          propertyName={application.property?.name}
+                          context="application"
+                          className="bg-gray-800 text-white hover:bg-secondary-500 hover:text-primary-50"
+                        />
+                      )}
+                      {/* Always show message button for pending and approved */}
+                      {(application.status === 'Pending' || application.status === 'Approved') && (
+                        <MessageButton
+                          recipientId={application.tenantCognitoId}
+                          recipientName={application.tenant?.name || 'Tenant'}
+                          recipientType="tenant"
+                          propertyId={application.property?.id}
+                          propertyName={application.property?.name}
+                          context="application"
+                          variant="outline"
+                        />
                       )}
                     </div>
                   </div>

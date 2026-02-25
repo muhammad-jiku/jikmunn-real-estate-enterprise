@@ -1,21 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import
+  {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+  } from '@/components/ui/select';
 import { PropertyTypeIcons } from '@/lib/constants';
 import { cleanParams, cn, formatPriceValue } from '@/lib/utils';
-import {
-  FiltersState,
-  setFilters,
-  setViewMode,
-  toggleFiltersFullOpen,
-} from '@/state';
+import
+  {
+    FiltersState,
+    setFilters,
+    setViewMode,
+    toggleFiltersFullOpen,
+  } from '@/state';
 import { useAppSelector } from '@/state/redux';
 import { debounce } from 'lodash';
 import { Filter, Grid, List, Search } from 'lucide-react';
@@ -85,12 +87,13 @@ const FiltersBar = () => {
       const data = await response.json();
       if (data.features && data.features.length > 0) {
         const [lng, lat] = data.features[0].center;
-        dispatch(
-          setFilters({
-            location: searchInput,
-            coordinates: [lng, lat],
-          })
-        );
+        const newFilters = {
+          ...filters,
+          location: searchInput,
+          coordinates: [lng, lat] as [number, number],
+        };
+        dispatch(setFilters(newFilters));
+        updateURL(newFilters);
       }
     } catch (err) {
       console.error('Error search location:', err);
@@ -140,10 +143,8 @@ const FiltersBar = () => {
               handleFilterChange('priceRange', value, true)
             }
           >
-            <SelectTrigger className='w-22 rounded-xl border-primary-400'>
-              <SelectValue>
-                {formatPriceValue(filters.priceRange[0], true)}
-              </SelectValue>
+            <SelectTrigger className='w-32 rounded-xl border-primary-400'>
+              <SelectValue placeholder={formatPriceValue(filters.priceRange[0], true)} />
             </SelectTrigger>
             <SelectContent className='bg-white'>
               <SelectItem value='any'>Any Min Price</SelectItem>
@@ -162,10 +163,8 @@ const FiltersBar = () => {
               handleFilterChange('priceRange', value, false)
             }
           >
-            <SelectTrigger className='w-22 rounded-xl border-primary-400'>
-              <SelectValue>
-                {formatPriceValue(filters.priceRange[1], false)}
-              </SelectValue>
+            <SelectTrigger className='w-32 rounded-xl border-primary-400'>
+              <SelectValue placeholder={formatPriceValue(filters.priceRange[1], false)} />
             </SelectTrigger>
             <SelectContent className='bg-white'>
               <SelectItem value='any'>Any Max Price</SelectItem>
@@ -185,7 +184,7 @@ const FiltersBar = () => {
             value={filters.beds}
             onValueChange={(value) => handleFilterChange('beds', value, null)}
           >
-            <SelectTrigger className='w-26 rounded-xl border-primary-400'>
+            <SelectTrigger className='w-28 rounded-xl border-primary-400'>
               <SelectValue placeholder='Beds' />
             </SelectTrigger>
             <SelectContent className='bg-white'>
@@ -202,7 +201,7 @@ const FiltersBar = () => {
             value={filters.baths}
             onValueChange={(value) => handleFilterChange('baths', value, null)}
           >
-            <SelectTrigger className='w-26 rounded-xl border-primary-400'>
+            <SelectTrigger className='w-28 rounded-xl border-primary-400'>
               <SelectValue placeholder='Baths' />
             </SelectTrigger>
             <SelectContent className='bg-white'>
@@ -221,7 +220,7 @@ const FiltersBar = () => {
             handleFilterChange('propertyType', value, null)
           }
         >
-          <SelectTrigger className='w-32 rounded-xl border-primary-400'>
+          <SelectTrigger className='w-40 rounded-xl border-primary-400'>
             <SelectValue placeholder='Home Type' />
           </SelectTrigger>
           <SelectContent className='bg-white'>

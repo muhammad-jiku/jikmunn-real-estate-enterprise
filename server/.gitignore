@@ -1,3 +1,23 @@
 node_modules
 .env
 /src/generated/prisma
+
+# build
+dist/
+build/
+
+# testing
+coverage/
+
+# logs
+logs/
+*.log
+npm-debug.log*
+
+# misc
+.DS_Store
+*.tsbuildinfo
+
+# ide
+.idea/
+.vscode/

@@ -1,16 +1,31 @@
 "use client"
 
-import * as React from "react"
 import * as TooltipPrimitive from "@radix-ui/react-tooltip"
+import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function TooltipProvider({
-  delayDuration = 0,
-  ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
+type TooltipProviderProps = React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Provider> & {
+  children?: React.ReactNode
+}
+type TooltipProps = React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Root> & {
+  children?: React.ReactNode
+}
+type TooltipTriggerProps = React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Trigger> & {
+  children?: React.ReactNode
+  asChild?: boolean
+}
+type TooltipContentProps = React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> & {
+  className?: string
+  children?: React.ReactNode
+  hidden?: boolean
+}
+
+ 
+const TooltipProvider = ({ delayDuration = 0, ...props }: TooltipProviderProps) => {
+  const Provider = TooltipPrimitive.Provider as any
   return (
-    <TooltipPrimitive.Provider
+    <Provider
       data-slot="tooltip-provider"
       delayDuration={delayDuration}
       {...props}
@@ -18,31 +33,39 @@ function TooltipProvider({
   )
 }
 
-function Tooltip({
-  ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+ 
+const Tooltip = ({ children, ...props }: TooltipProps) => {
+  const Root = TooltipPrimitive.Root as any
   return (
     <TooltipProvider>
-      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+      <Root data-slot="tooltip" {...props}>
+        {children}
+      </Root>
     </TooltipProvider>
   )
 }
 
-function TooltipTrigger({
-  ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
-}
+const TooltipTrigger = React.forwardRef<
+  React.ComponentRef<typeof TooltipPrimitive.Trigger>,
+  TooltipTriggerProps
+ 
+>(({ ...props }, ref) => {
+  const Trigger = TooltipPrimitive.Trigger as any
+  return <Trigger ref={ref} data-slot="tooltip-trigger" {...props} />
+})
+TooltipTrigger.displayName = "TooltipTrigger"
 
-function TooltipContent({
-  className,
-  sideOffset = 0,
-  children,
-  ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+const TooltipContent = React.forwardRef<
+  React.ComponentRef<typeof TooltipPrimitive.Content>,
+  TooltipContentProps
+ 
+>(({ className, sideOffset = 0, children, ...props }, ref) => {
+  const Content = TooltipPrimitive.Content as any
+  const Arrow = TooltipPrimitive.Arrow as any
   return (
     <TooltipPrimitive.Portal>
-      <TooltipPrimitive.Content
+      <Content
+        ref={ref}
         data-slot="tooltip-content"
         sideOffset={sideOffset}
         className={cn(
@@ -52,10 +75,12 @@ function TooltipContent({
         {...props}
       >
         {children}
-        <TooltipPrimitive.Arrow className="bg-primary fill-primary z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
-      </TooltipPrimitive.Content>
+        <Arrow className="bg-primary fill-primary z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
+      </Content>
     </TooltipPrimitive.Portal>
   )
-}
+})
+TooltipContent.displayName = "TooltipContent"
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger }
+

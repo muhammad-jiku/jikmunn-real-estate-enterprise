@@ -1,17 +1,41 @@
 import Card from '@/components/shared/card/Card';
 import CardCompact from '@/components/shared/card/CardCompact';
 import {
-  useAddFavoritePropertyMutation,
-  useGetAuthUserQuery,
-  useGetPropertiesQuery,
-  useGetTenantQuery,
-  useRemoveFavoritePropertyMutation,
+    useAddFavoritePropertyMutation,
+    useGetAuthUserQuery,
+    useGetPropertiesQuery,
+    useGetTenantQuery,
+    useRemoveFavoritePropertyMutation,
 } from '@/state/api';
 import { useAppSelector } from '@/state/redux';
 import { Property } from '@/types/prismaTypes';
 
+// Skeleton loading component for listings
+const ListingSkeleton = () => (
+  <div className='w-full'>
+    <div className='h-5 w-32 bg-gray-200 rounded animate-pulse mx-4 mb-4' />
+    <div className='p-4 w-full space-y-4'>
+      {[1, 2, 3].map((i) => (
+        <div key={i} className='bg-white rounded-xl overflow-hidden shadow-lg'>
+          <div className='w-full h-48 bg-gray-200 animate-pulse' />
+          <div className='p-4 space-y-3'>
+            <div className='h-6 bg-gray-200 rounded w-3/4 animate-pulse' />
+            <div className='h-4 bg-gray-200 rounded w-1/2 animate-pulse' />
+            <div className='flex gap-4'>
+              <div className='h-4 bg-gray-200 rounded w-16 animate-pulse' />
+              <div className='h-4 bg-gray-200 rounded w-16 animate-pulse' />
+              <div className='h-4 bg-gray-200 rounded w-16 animate-pulse' />
+            </div>
+            <div className='h-6 bg-gray-200 rounded w-24 animate-pulse' />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 const Listings = () => {
-  const { data: authUser } = useGetAuthUserQuery();
+  const { data: authUser, isLoading: authLoading } = useGetAuthUserQuery();
   const { data: tenant } = useGetTenantQuery(
     authUser?.cognitoInfo?.userId || '',
     {
@@ -26,7 +50,7 @@ const Listings = () => {
 
   const {
     data: properties,
-    isLoading,
+    isLoading: propertiesLoading,
     isError,
   } = useGetPropertiesQuery(filters);
 
@@ -50,8 +74,12 @@ const Listings = () => {
     }
   };
 
-  if (isLoading) return <>Loading...</>;
+  // Only show skeleton skeleton while loading properties (not auth)
+  if (propertiesLoading) return <ListingSkeleton />;
   if (isError || !properties) return <div>Failed to fetch properties</div>;
+
+  // Determine if user is signed in (but don't block on auth loading)
+  const isSignedIn = !!authUser && !authLoading;
 
   return (
     <div className='w-full'>
@@ -74,7 +102,7 @@ const Listings = () => {
                   ) || false
                 }
                 onFavoriteToggle={() => handleFavoriteToggle(property.id)}
-                showFavoriteButton={!!authUser}
+                showFavoriteButton={isSignedIn}
                 propertyLink={`/search/${property.id}`}
               />
             ) : (
@@ -87,7 +115,7 @@ const Listings = () => {
                   ) || false
                 }
                 onFavoriteToggle={() => handleFavoriteToggle(property.id)}
-                showFavoriteButton={!!authUser}
+                showFavoriteButton={isSignedIn}
                 propertyLink={`/search/${property.id}`}
               />
             )

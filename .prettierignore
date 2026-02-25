@@ -1,0 +1,8 @@
+node_modules
+dist
+.next
+coverage
+playwright-report
+test-results
+*.min.js
+*.d.ts

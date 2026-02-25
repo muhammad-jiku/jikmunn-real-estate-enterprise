@@ -8,14 +8,16 @@ import { AmenityEnum, HighlightEnum, PropertyTypeEnum } from '@/lib/constants';
 import { PropertyFormData, propertySchema } from '@/lib/schemas';
 import { useCreatePropertyMutation, useGetAuthUserQuery } from '@/state/api';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 
 const NewProperty = () => {
-  const [createProperty] = useCreatePropertyMutation();
+  const router = useRouter();
+  const [createProperty, { isLoading: isCreating }] = useCreatePropertyMutation();
   const { data: authUser } = useGetAuthUserQuery();
 
   const form = useForm<PropertyFormData>({
-    resolver: zodResolver(propertySchema),
+    resolver: zodResolver(propertySchema) as never,
     defaultValues: {
       name: '',
       description: '',
@@ -25,8 +27,8 @@ const NewProperty = () => {
       isPetsAllowed: true,
       isParkingIncluded: true,
       photoUrls: [],
-      amenities: '',
-      highlights: '',
+      amenities: [],
+      highlights: [],
       beds: 1,
       baths: 1,
       squareFeet: 1000,
@@ -60,19 +62,12 @@ const NewProperty = () => {
 
     formData.append('managerCognitoId', authUser.cognitoInfo.userId);
 
-    // // DEBUG: inspect FormData contents before sending
-    // // This will print each entry; for files it prints File object info in browser console
-    // for (const pair of (formData as any).entries()) {
-    //   const [k, v] = pair as [string, any];
-    //   if (v instanceof File) {
-    //     console.log('formData file entry:', k, v.name, v.type, v.size);
-    //   } else {
-    //     console.log('formData entry:', k, v);
-    //   }
-    // }
-
-    // send as FormData
-    await createProperty(formData);
+    try {
+      await createProperty(formData).unwrap();
+      router.push('/managers/properties');
+    } catch (error) {
+      console.error('Failed to create property:', error);
+    }
   };
 
   return (
@@ -84,7 +79,7 @@ const NewProperty = () => {
       <div className='bg-white rounded-xl p-6'>
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit(onSubmit)}
+            onSubmit={form.handleSubmit(onSubmit as never)}
             className='p-4 space-y-10'
           >
             {/* Basic Information */}
@@ -182,7 +177,7 @@ const NewProperty = () => {
                 <CustomFormField
                   name='amenities'
                   label='Amenities'
-                  type='select'
+                  type='multi-select'
                   options={Object.keys(AmenityEnum).map((amenity) => ({
                     value: amenity,
                     label: amenity,
@@ -191,7 +186,7 @@ const NewProperty = () => {
                 <CustomFormField
                   name='highlights'
                   label='Highlights'
-                  type='select'
+                  type='multi-select'
                   options={Object.keys(HighlightEnum).map((highlight) => ({
                     value: highlight,
                     label: highlight,
@@ -240,8 +235,9 @@ const NewProperty = () => {
             <Button
               type='submit'
               className='bg-primary-700 text-white w-full mt-8'
+              disabled={isCreating}
             >
-              Create Property
+              {isCreating ? 'Creating...' : 'Create Property'}
             </Button>
           </form>
         </Form>

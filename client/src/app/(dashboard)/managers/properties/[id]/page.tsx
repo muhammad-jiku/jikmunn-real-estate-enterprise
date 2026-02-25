@@ -4,26 +4,41 @@
 import Header from '@/components/shared/Header';
 import Loading from '@/components/shared/Loading';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
 } from '@/components/ui/table';
 import {
-  useGetPaymentsQuery,
-  useGetPropertyLeasesQuery,
-  useGetPropertyQuery,
+    useGetPaymentsQuery,
+    useGetPropertyLeasesQuery,
+    useGetPropertyQuery,
 } from '@/state/api';
-import type { Lease, Payment } from '@/types/prismaTypes';
+import type { Lease, Payment, Property } from '@/types/prismaTypes';
 import { ArrowDownToLine, ArrowLeft, Check, Download } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import React from 'react';
+import { toast } from 'sonner';
 
-const LeaseRow: React.FC<{ lease: Lease }> = ({ lease }) => {
+// Download utility function
+const generateAndDownloadFile = (filename: string, content: string) => {
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast.success(`Downloaded ${filename}`);
+};
+
+const LeaseRow: React.FC<{ lease: Lease; property: Property | undefined }> = ({ lease, property }) => {
   // fetch payments for this lease (Option A)
   const { data: payments = [], isLoading: paymentsLoading } =
     useGetPaymentsQuery(lease.id);
@@ -47,6 +62,37 @@ const LeaseRow: React.FC<{ lease: Lease }> = ({ lease }) => {
   const currentStatus = getCurrentMonthPaymentStatus();
   const isPaid = currentStatus === 'Paid';
 
+  const handleDownloadAgreement = () => {
+    const tenant = (lease as any).tenant;
+    const content = `
+LEASE AGREEMENT
+===============
+
+Property: ${property?.name || 'N/A'}
+Address: ${(property as any)?.location?.address || 'N/A'}, ${(property as any)?.location?.city || ''}, ${(property as any)?.location?.state || ''}
+
+Tenant: ${tenant?.name || 'N/A'}
+Email: ${tenant?.email || 'N/A'}
+Phone: ${tenant?.phoneNumber || 'N/A'}
+
+Lease Details:
+- Lease ID: ${lease.id}
+- Start Date: ${new Date(lease.startDate).toLocaleDateString()}
+- End Date: ${new Date(lease.endDate).toLocaleDateString()}
+- Monthly Rent: $${Number(lease.rent).toFixed(2)}
+- Security Deposit: $${property?.securityDeposit || 'N/A'}
+
+Terms and Conditions:
+1. The tenant agrees to pay rent on the first of each month.
+2. The tenant shall maintain the property in good condition.
+3. No unauthorized modifications to the property are permitted.
+4. The security deposit will be returned upon satisfactory inspection at lease end.
+
+Signed electronically via RENTIFUL platform.
+    `;
+    generateAndDownloadFile(`lease-${lease.id}-${tenant?.name?.replace(/\s+/g, '-') || 'tenant'}.txt`, content);
+  };
+
   return (
     <TableRow key={lease.id} className='h-24'>
       <TableCell>
@@ -54,22 +100,22 @@ const LeaseRow: React.FC<{ lease: Lease }> = ({ lease }) => {
           <Image
             src={
               // prefer tenant photo if available, otherwise fallback to S3 image used previously
-              (lease.tenant as any)?.photoUrl ||
+              (lease as any).tenant?.photoUrl ||
               'https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/landing-i1.png'
             }
             width={40}
             height={40}
             className='rounded-full'
-            alt={(lease.tenant as any)?.name || 'Tenant'}
+            alt={(lease as any).tenant?.name || 'Tenant'}
             onError={(e) => {
               // fallback image when next/image fails to load
               (e.currentTarget as HTMLImageElement).src = '/landing-i1.png';
             }}
           />
           <div>
-            <div className='font-semibold'>{(lease.tenant as any)?.name}</div>
+            <div className='font-semibold'>{(lease as any).tenant?.name}</div>
             <div className='text-sm text-gray-500'>
-              {(lease.tenant as any)?.email}
+              {(lease as any).tenant?.email}
             </div>
           </div>
         </div>
@@ -95,10 +141,11 @@ const LeaseRow: React.FC<{ lease: Lease }> = ({ lease }) => {
         </span>
       </TableCell>
 
-      <TableCell>{(lease.tenant as any)?.phoneNumber}</TableCell>
+      <TableCell>{(lease as any).tenant?.phoneNumber}</TableCell>
 
       <TableCell>
         <button
+          onClick={handleDownloadAgreement}
           className={`border border-gray-300 text-gray-700 py-2 px-4 rounded-md flex 
             items-center justify-center font-semibold hover:bg-primary-700 hover:text-primary-50`}
         >
@@ -119,6 +166,29 @@ const PropertyTenants = () => {
 
   const { data: leases, isLoading: leasesLoading } =
     useGetPropertyLeasesQuery(propertyId);
+
+  const handleDownloadAll = () => {
+    if (!leases || leases.length === 0) {
+      toast.info('No leases to download');
+      return;
+    }
+
+    const content = leases.map((lease) => {
+      const tenant = lease.tenant as any;
+      return `
+TENANT: ${tenant?.name || 'N/A'}
+Email: ${tenant?.email || 'N/A'}
+Phone: ${tenant?.phoneNumber || 'N/A'}
+Lease Period: ${new Date(lease.startDate).toLocaleDateString()} - ${new Date(lease.endDate).toLocaleDateString()}
+Monthly Rent: $${Number(lease.rent).toFixed(2)}
+---`;
+    }).join('\n');
+
+    generateAndDownloadFile(
+      `${property?.name?.replace(/\s+/g, '-') || 'property'}-all-tenants.txt`,
+      `TENANTS OVERVIEW\n================\nProperty: ${property?.name || 'N/A'}\nAddress: ${property?.location?.address || 'N/A'}, ${property?.location?.city || ''}\n\n${content}`
+    );
+  };
 
   if (propertyLoading || leasesLoading) return <Loading />;
 
@@ -150,8 +220,10 @@ const PropertyTenants = () => {
             </div>
             <div>
               <button
+                onClick={handleDownloadAll}
+                disabled={!leases || leases.length === 0}
                 className={`bg-white border border-gray-300 text-gray-700 py-2
-                  px-4 rounded-md flex items-center justify-center hover:bg-primary-700 hover:text-primary-50`}
+                  px-4 rounded-md flex items-center justify-center hover:bg-primary-700 hover:text-primary-50 disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 <Download className='w-5 h-5 mr-2' />
                 <span>Download All</span>
@@ -176,7 +248,7 @@ const PropertyTenants = () => {
 
               <TableBody>
                 {leases?.map((lease) => (
-                  <LeaseRow key={lease.id} lease={lease} />
+                  <LeaseRow key={lease.id} lease={lease} property={property} />
                 ))}
               </TableBody>
             </Table>

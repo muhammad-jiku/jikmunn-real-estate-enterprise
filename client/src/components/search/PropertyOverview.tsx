@@ -8,7 +8,13 @@ const PropertyOverview = ({ propertyId }: PropertyOverviewProps) => {
     isLoading,
   } = useGetPropertyQuery(propertyId);
 
-  if (isLoading) return <>Loading...</>;
+  if (isLoading) return (
+    <div className='animate-pulse space-y-4'>
+      <div className='h-4 bg-gray-200 rounded w-1/3'></div>
+      <div className='h-8 bg-gray-200 rounded w-2/3'></div>
+      <div className='h-4 bg-gray-200 rounded w-1/2'></div>
+    </div>
+  );
   if (isError || !property) {
     return <>Property not Found</>;
   }
@@ -33,7 +39,7 @@ const PropertyOverview = ({ propertyId }: PropertyOverviewProps) => {
           <div className='flex justify-between items-center gap-3'>
             <span className='flex items-center text-yellow-500'>
               <Star className='w-4 h-4 mr-1 fill-current' />
-              {property.averageRating.toFixed(1)} ({property.numberOfReviews}{' '}
+              {property.averageRating?.toFixed(1) || '0.0'} ({property.numberOfReviews}{' '}
               Reviews)
             </span>
             <span className='text-green-600'>Verified Listing</span>

@@ -1,6 +1,8 @@
 'use client';
 
+import { PropertyReviews } from '@/components/property/PropertyReviews';
 import ApplicationModal from '@/components/search/ApplicationModal';
+import { ApprovedTenantPayment } from '@/components/search/ApprovedTenantPayment';
 import ContactWidget from '@/components/search/ContactWidget';
 import ImagePreviews from '@/components/search/ImagePreviews';
 import PropertyDetails from '@/components/search/PropertyDetails';
@@ -37,10 +39,18 @@ const SingleListing = () => {
           <PropertyOverview propertyId={propertyId} />
           <PropertyDetails propertyId={propertyId} />
           <PropertyLocation propertyId={propertyId} />
+          
+          {/* Reviews Section */}
+          <div className='mt-8'>
+            <PropertyReviews propertyId={propertyId} />
+          </div>
         </div>
 
-        <div className='order-1 md:order-2'>
-          <ContactWidget onOpenModal={() => setIsModalOpen(true)} />
+        <div className='order-1 md:order-2 space-y-4'>
+          {/* Payment widget for approved tenants */}
+          <ApprovedTenantPayment propertyId={propertyId} />
+          
+          <ContactWidget onOpenModal={() => setIsModalOpen(true)} propertyId={propertyId} />
         </div>
       </div>
 

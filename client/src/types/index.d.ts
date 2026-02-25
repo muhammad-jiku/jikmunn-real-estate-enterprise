@@ -1,7 +1,7 @@
 import { AuthUser } from 'aws-amplify/auth';
 import { MotionProps as OriginalMotionProps } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
-import { Application, Manager, Property, Tenant } from './prismaTypes';
+import { Application, Lease, Manager, Payment, Property, Tenant } from './prismaTypes';
 
 declare module 'framer-motion' {
   interface MotionProps extends OriginalMotionProps {
@@ -9,49 +9,68 @@ declare module 'framer-motion' {
   }
 }
 
+// Extended types with relations - these match what the API returns
 declare global {
-  // enum AmenityEnum {
-  //   WasherDryer = 'WasherDryer',
-  //   AirConditioning = 'AirConditioning',
-  //   Dishwasher = 'Dishwasher',
-  //   HighSpeedInternet = 'HighSpeedInternet',
-  //   HardwoodFloors = 'HardwoodFloors',
-  //   WalkInClosets = 'WalkInClosets',
-  //   Microwave = 'Microwave',
-  //   Refrigerator = 'Refrigerator',
-  //   Pool = 'Pool',
-  //   Gym = 'Gym',
-  //   Parking = 'Parking',
-  //   PetsAllowed = 'PetsAllowed',
-  //   WiFi = 'WiFi',
-  // }
+  // Location type (matches Prisma Location model)
+  interface Location {
+    id: number;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    postalCode: string;
+    latitude: number;
+    longitude: number;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
+  }
 
-  // enum HighlightEnum {
-  //   HighSpeedInternetAccess = 'HighSpeedInternetAccess',
-  //   WasherDryer = 'WasherDryer',
-  //   AirConditioning = 'AirConditioning',
-  //   Heating = 'Heating',
-  //   SmokeFree = 'SmokeFree',
-  //   CableReady = 'CableReady',
-  //   SatelliteTV = 'SatelliteTV',
-  //   DoubleVanities = 'DoubleVanities',
-  //   TubShower = 'TubShower',
-  //   Intercom = 'Intercom',
-  //   SprinklerSystem = 'SprinklerSystem',
-  //   RecentlyRenovated = 'RecentlyRenovated',
-  //   CloseToTransit = 'CloseToTransit',
-  //   GreatView = 'GreatView',
-  //   QuietNeighborhood = 'QuietNeighborhood',
-  // }
+  // Extended ApplicationStatus including AwaitingPayment (matches Prisma schema)
+  type ExtendedApplicationStatus = 'Pending' | 'Denied' | 'Approved' | 'AwaitingPayment';
 
-  // enum PropertyTypeEnum {
-  //   Rooms = 'Rooms',
-  //   Tinyhouse = 'Tinyhouse',
-  //   Apartment = 'Apartment',
-  //   Villa = 'Villa',
-  //   Townhouse = 'Townhouse',
-  //   Cottage = 'Cottage',
-  // }
+  // Extended Manager with optional image
+  interface ManagerWithImage extends Manager {
+    image?: string;
+    photoUrl?: string;
+  }
+
+  // Extended Tenant with relations
+  interface TenantWithRelations extends Tenant {
+    favorites?: Property[];
+    image?: string;
+    photoUrl?: string;
+  }
+
+  // Extended Property with relations
+  interface PropertyWithRelations extends Property {
+    location?: Location;
+    manager?: ManagerWithImage;
+  }
+
+  // Extended Application with relations
+  interface ApplicationWithRelations extends Omit<Application, 'status' | 'applicationDate'> {
+    status: ExtendedApplicationStatus;
+    applicationDate: Date | string;
+    property?: PropertyWithRelations;
+    tenant?: TenantWithRelations;
+    lease?: LeaseWithRelations;
+    manager?: ManagerWithImage;
+  }
+
+  // Extended Lease with relations
+  interface LeaseWithRelations extends Lease {
+    tenant?: TenantWithRelations;
+    property?: PropertyWithRelations;
+    payments?: Payment[];
+    nextPaymentDate?: Date;
+  }
+
+  // Extended Payment with optional fields
+  interface PaymentWithRelations extends Payment {
+    paymentMethod?: string;
+  }
 
   interface SidebarLinkProps {
     href: string;
@@ -71,6 +90,7 @@ declare global {
 
   interface ContactWidgetProps {
     onOpenModal: () => void;
+    propertyId: number;
   }
 
   interface ImagePreviewsProps {
@@ -91,21 +111,24 @@ declare global {
   }
 
   interface ApplicationCardProps {
-    application: Application;
+    application: ApplicationWithRelations;
     userType: 'manager' | 'renter';
     children: React.ReactNode;
   }
 
   interface CardProps {
-    property: Property;
+    property: PropertyWithRelations;
     isFavorite: boolean;
     onFavoriteToggle: () => void;
     showFavoriteButton?: boolean;
     propertyLink?: string;
+    showEditDelete?: boolean;
+    onEdit?: () => void;
+    onDelete?: () => void;
   }
 
   interface CardCompactProps {
-    property: Property;
+    property: PropertyWithRelations;
     isFavorite: boolean;
     onFavoriteToggle: () => void;
     showFavoriteButton?: boolean;
@@ -131,11 +154,23 @@ declare global {
     userType: 'manager' | 'tenant';
   }
 
+  // User info type that includes the image field
+  interface UserInfo {
+    id: number;
+    cognitoId: string;
+    name: string;
+    email: string;
+    phoneNumber: string;
+    image?: string;
+    photoUrl?: string;
+  }
+
   interface User {
     cognitoInfo: AuthUser;
-    userInfo: Tenant | Manager;
+    userInfo: UserInfo;
     userRole: JsonObject | JsonPrimitive | JsonArray;
   }
 }
 
-export {};
+export { };
+

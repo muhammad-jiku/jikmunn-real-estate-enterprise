@@ -1,6 +1,7 @@
 'use client';
 
 import Sidebar from '@/components/shared/AppSidebar';
+import Loading from '@/components/shared/Loading';
 import Navbar from '@/components/shared/Navbar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { NAVBAR_HEIGHT } from '@/lib/constants';
@@ -33,7 +34,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     }
   }, [authUser, router, pathname]);
 
-  if (authLoading || isLoading) return <>Loading...</>;
+  if (authLoading || isLoading) return <Loading />;
   if (!authUser?.userRole) return null;
 
   return (

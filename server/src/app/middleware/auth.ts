@@ -7,6 +7,7 @@ interface DecodedToken extends JwtPayload {
 }
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       user?: {
@@ -41,7 +42,7 @@ export const auth = (allowedRoles: string[]) => {
         res.status(403).json({ message: 'Access Denied' });
         return;
       }
-    } catch (err) {
+    } catch {
       // console.log('Failed to decode token:', err);
       res.status(400).json({ message: 'Invalid token' });
       return;

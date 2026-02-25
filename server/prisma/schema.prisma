@@ -5,15 +5,13 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider        = "prisma-client-js"
-  // output   = "../src/generated/prisma"
-  previewFeatures = ["postgresqlExtensions"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  extensions = [postgis]
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Highlight {
@@ -63,6 +61,7 @@ enum ApplicationStatus {
   Pending
   Denied
   Approved
+  AwaitingPayment // Manager approved, waiting for tenant to pay initial costs
 }
 
 enum PaymentStatus {
@@ -70,6 +69,42 @@ enum PaymentStatus {
   Paid
   PartiallyPaid
   Overdue
+}
+
+enum PaymentType {
+  SecurityDeposit
+  FirstMonthRent
+  ApplicationFee
+  MonthlyRent
+  InitialPayment // Combined initial payment (deposit + first month + app fee)
+}
+
+enum MaintenanceStatus {
+  Pending
+  InProgress
+  Completed
+  Cancelled
+}
+
+enum Priority {
+  Low
+  Medium
+  High
+  Urgent
+}
+
+enum NotificationType {
+  ApplicationStatus
+  NewApplication
+  PaymentDue
+  PaymentReceived
+  LeaseExpiring
+  MaintenanceUpdate
+  NewMaintenanceRequest
+  NewMessage
+  NewReview
+  PropertyUpdate
+  ProfileUpdate
 }
 
 model Property {
@@ -94,12 +129,15 @@ model Property {
   locationId        Int
   managerCognitoId  String
 
-  location     Location      @relation(fields: [locationId], references: [id])
-  manager      Manager       @relation(fields: [managerCognitoId], references: [cognitoId])
-  leases       Lease[]
-  applications Application[]
-  favoritedBy  Tenant[]      @relation("TenantFavorites")
-  tenants      Tenant[]      @relation("TenantProperties")
+  location            Location              @relation(fields: [locationId], references: [id])
+  manager             Manager               @relation(fields: [managerCognitoId], references: [cognitoId])
+  leases              Lease[]
+  applications        Application[]
+  favoritedBy         Tenant[]              @relation("TenantFavorites")
+  tenants             Tenant[]              @relation("TenantProperties")
+  reviews             Review[]
+  maintenanceRequests MaintenanceRequest[]
+  messages            Message[]
 }
 
 model Manager {
@@ -109,7 +147,10 @@ model Manager {
   email       String
   phoneNumber String
 
-  managedProperties Property[]
+  managedProperties   Property[]
+  notifications       Notification[]
+  sentMessages        Message[]           @relation("SentMessages")
+  receivedMessages    Message[]           @relation("ReceivedMessages")
 }
 
 model Tenant {
@@ -119,20 +160,26 @@ model Tenant {
   email       String
   phoneNumber String
 
-  properties   Property[]    @relation("TenantProperties")
-  favorites    Property[]    @relation("TenantFavorites")
-  applications Application[]
-  leases       Lease[]
+  properties          Property[]            @relation("TenantProperties")
+  favorites           Property[]            @relation("TenantFavorites")
+  applications        Application[]
+  leases              Lease[]
+  reviews             Review[]
+  maintenanceRequests MaintenanceRequest[]
+  notifications       Notification[]
+  sentMessages        Message[]             @relation("TenantSentMessages")
+  receivedMessages    Message[]             @relation("TenantReceivedMessages")
 }
 
 model Location {
-  id          Int                                   @id @default(autoincrement())
-  address     String
-  city        String
-  state       String
-  country     String
-  postalCode  String
-  coordinates Unsupported("geography(Point, 4326)")
+  id         Int    @id @default(autoincrement())
+  address    String
+  city       String
+  state      String
+  country    String
+  postalCode String
+  latitude   Float
+  longitude  Float
 
   properties Property[]
 }
@@ -149,9 +196,10 @@ model Application {
   message         String?
   leaseId         Int?              @unique
 
-  property Property @relation(fields: [propertyId], references: [id])
-  tenant   Tenant   @relation(fields: [tenantCognitoId], references: [cognitoId])
-  lease    Lease?   @relation(fields: [leaseId], references: [id])
+  property Property  @relation(fields: [propertyId], references: [id])
+  tenant   Tenant    @relation(fields: [tenantCognitoId], references: [cognitoId])
+  lease    Lease?    @relation(fields: [leaseId], references: [id])
+  payments Payment[]
 }
 
 model Lease {
@@ -170,13 +218,111 @@ model Lease {
 }
 
 model Payment {
-  id            Int           @id @default(autoincrement())
-  amountDue     Float
-  amountPaid    Float
-  dueDate       DateTime
-  paymentDate   DateTime
-  paymentStatus PaymentStatus
-  leaseId       Int
+  id              Int           @id @default(autoincrement())
+  amountDue       Float
+  amountPaid      Float
+  dueDate         DateTime
+  paymentDate     DateTime?
+  paymentStatus   PaymentStatus
+  paymentType     PaymentType   @default(MonthlyRent)
+  leaseId         Int?
+  applicationId   Int?          // For initial payments before lease is created
+  stripePaymentId String?
+  stripeInvoiceId String?
+  receiptUrl      String?
+  gracePeriodDays Int           @default(5) // 5-day grace period
+  description     String?
 
-  lease Lease @relation(fields: [leaseId], references: [id])
+  lease       Lease?       @relation(fields: [leaseId], references: [id])
+  application Application? @relation(fields: [applicationId], references: [id])
+}
+
+// ============================================
+// NEW MODELS - Phase 1 Implementation
+// ============================================
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  rating     Int      // 1-5 stars
+  comment    String?
+  propertyId Int
+  tenantCognitoId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant   Tenant   @relation(fields: [tenantCognitoId], references: [cognitoId])
+
+  @@unique([propertyId, tenantCognitoId]) // One review per tenant per property
+}
+
+model MaintenanceRequest {
+  id          Int               @id @default(autoincrement())
+  title       String
+  description String
+  status      MaintenanceStatus @default(Pending)
+  priority    Priority          @default(Medium)
+  propertyId  Int
+  tenantCognitoId String
+  attachments String[]          // Photo URLs
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  resolvedAt  DateTime?
+  resolution  String?
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant   Tenant   @relation(fields: [tenantCognitoId], references: [cognitoId])
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  data      Json?            // Additional data (propertyId, applicationId, etc.)
+  createdAt DateTime         @default(now())
+  
+  // Polymorphic relation - notification can belong to tenant OR manager
+  tenantCognitoId  String?
+  managerCognitoId String?
+
+  tenant  Tenant?  @relation(fields: [tenantCognitoId], references: [cognitoId])
+  manager Manager? @relation(fields: [managerCognitoId], references: [cognitoId])
+}
+
+model Message {
+  id         Int       @id @default(autoincrement())
+  content    String
+  propertyId Int?
+  createdAt  DateTime  @default(now())
+  readAt     DateTime?
+
+  // Sender can be tenant or manager
+  senderTenantCognitoId  String?
+  senderManagerCognitoId String?
+  
+  // Receiver can be tenant or manager
+  receiverTenantCognitoId  String?
+  receiverManagerCognitoId String?
+
+  property        Property? @relation(fields: [propertyId], references: [id])
+  senderTenant    Tenant?   @relation("TenantSentMessages", fields: [senderTenantCognitoId], references: [cognitoId])
+  senderManager   Manager?  @relation("SentMessages", fields: [senderManagerCognitoId], references: [cognitoId])
+  receiverTenant  Tenant?   @relation("TenantReceivedMessages", fields: [receiverTenantCognitoId], references: [cognitoId])
+  receiverManager Manager?  @relation("ReceivedMessages", fields: [receiverManagerCognitoId], references: [cognitoId])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String   // CREATE, UPDATE, DELETE, LOGIN, etc.
+  entity    String   // Property, Application, Lease, etc.
+  entityId  Int?
+  userId    String   // Cognito ID
+  userRole  String   // tenant, manager
+  oldData   Json?
+  newData   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
 }

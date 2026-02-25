@@ -2,21 +2,23 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import
+  {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+  } from '@/components/ui/dropdown-menu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { NAVBAR_HEIGHT } from '@/lib/constants';
 import { useGetAuthUserQuery } from '@/state/api';
 import { signOut } from 'aws-amplify/auth';
-import { Bell, MessageCircle, Plus, Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { NotificationDropdown } from './NotificationDropdown';
 
 const Navbar = () => {
   const router = useRouter();
@@ -100,13 +102,8 @@ const Navbar = () => {
         <div className='flex items-center gap-5'>
           {authUser ? (
             <>
-              <div className='relative hidden md:block'>
-                <MessageCircle className='w-6 h-6 cursor-pointer text-primary-200 hover:text-primary-400' />
-                <span className='absolute top-0 right-0 w-2 h-2 bg-secondary-700 rounded-full'></span>
-              </div>
-              <div className='relative hidden md:block'>
-                <Bell className='w-6 h-6 cursor-pointer text-primary-200 hover:text-primary-400' />
-                <span className='absolute top-0 right-0 w-2 h-2 bg-secondary-700 rounded-full'></span>
+              <div className='hidden md:block'>
+                <NotificationDropdown />
               </div>
 
               <DropdownMenu>

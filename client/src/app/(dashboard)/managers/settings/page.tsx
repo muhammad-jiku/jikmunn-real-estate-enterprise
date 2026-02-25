@@ -1,16 +1,18 @@
 'use client';
 
+import Loading from '@/components/shared/Loading';
 import SettingsForm from '@/components/shared/form/SettingsForm';
 import {
-  useGetAuthUserQuery,
-  useUpdateManagerSettingsMutation,
+    useGetAuthUserQuery,
+    useUpdateManagerSettingsMutation,
 } from '@/state/api';
 
 const ManagerSettings = () => {
   const { data: authUser, isLoading } = useGetAuthUserQuery();
   const [updateManager] = useUpdateManagerSettingsMutation();
 
-  if (isLoading) return <>Loading...</>;
+  if (isLoading) return <Loading />;
+  if (!authUser?.cognitoInfo?.userId) return <Loading />;
 
   const initialData = {
     name: authUser?.userInfo.name,
@@ -20,7 +22,7 @@ const ManagerSettings = () => {
 
   const handleSubmit = async (data: typeof initialData) => {
     await updateManager({
-      cognitoId: authUser?.cognitoInfo?.userId,
+      cognitoId: authUser.cognitoInfo.userId,
       ...data,
     });
   };

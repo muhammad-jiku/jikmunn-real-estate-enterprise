@@ -1,0 +1,54 @@
+{
+  "name": "jikmunn-real-estate-enterprise",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "lint": "npm run lint:client && npm run lint:server",
+    "lint:client": "cd client && npm run lint",
+    "lint:server": "cd server && npm run lint",
+    "lint:fix": "npm run lint:fix:client && npm run lint:fix:server",
+    "lint:fix:client": "cd client && npm run lint:fix",
+    "lint:fix:server": "cd server && npm run lint:fix",
+    "type-check": "npm run type-check:client && npm run type-check:server",
+    "type-check:client": "cd client && npm run type-check",
+    "type-check:server": "cd server && npm run type-check",
+    "test": "npm run test:client && npm run test:server",
+    "test:client": "cd client && npm run test",
+    "test:server": "cd server && npm run test",
+    "test:coverage": "npm run test:coverage:client && npm run test:coverage:server",
+    "test:coverage:client": "cd client && npm run test:coverage",
+    "test:coverage:server": "cd server && npm run test:coverage",
+    "test:watch:server": "cd server && npm run test:watch",
+    "test:watch:client": "cd client && npm run test:watch",
+    "test:watch": "cd client && npm run test:watch",
+    "test:e2e": "cd client && npm run test:e2e",
+    "test:e2e:ui": "cd client && npm run test:e2e:ui",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
+    "ts-node": "^10.9.2"
+  },
+  "lint-staged": {
+    "client/**/*.{ts,tsx}": [
+      "eslint --fix --config client/eslint.config.mjs",
+      "prettier --write"
+    ],
+    "server/**/*.ts": [
+      "eslint --fix --config server/eslint.config.mjs",
+      "prettier --write"
+    ]
+  }
+}

@@ -1,7 +1,7 @@
-import { Bath, Bed, Heart, House, Star } from 'lucide-react';
+import { Bath, Bed, Heart, House, Pencil, Star, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const Card = ({
   property,
@@ -9,12 +9,22 @@ const Card = ({
   onFavoriteToggle,
   showFavoriteButton = true,
   propertyLink,
+  showEditDelete = false,
+  onEdit,
+  onDelete,
 }: CardProps) => {
-  const [imgSrc, setImgSrc] = useState<string>(
+  const getImageUrl = () =>
     property?.photoUrls?.length > 0
       ? (property.photoUrls?.[0] as string)
-      : 'https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/placeholder.jpg'
-  );
+      : 'https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/placeholder.jpg';
+
+  const [imgSrc, setImgSrc] = useState<string>(getImageUrl());
+
+  // Update imgSrc when property.photoUrls changes
+  useEffect(() => {
+    setImgSrc(getImageUrl());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [property?.photoUrls]);
 
   const handleImageError = () => {
     if (imgSrc !== '/placeholder.jpg') {
@@ -59,6 +69,24 @@ const Card = ({
             />
           </button>
         )}
+        {showEditDelete && (
+          <div className='absolute top-4 right-4 flex gap-2'>
+            <button
+              className='bg-white hover:bg-blue-50 rounded-full p-2 cursor-pointer shadow-md'
+              onClick={onEdit}
+              title='Edit property'
+            >
+              <Pencil className='w-4 h-4 text-blue-600' />
+            </button>
+            <button
+              className='bg-white hover:bg-red-50 rounded-full p-2 cursor-pointer shadow-md'
+              onClick={onDelete}
+              title='Delete property'
+            >
+              <Trash2 className='w-4 h-4 text-red-600' />
+            </button>
+          </div>
+        )}
       </div>
       <div className='p-4'>
         <h2 className='text-xl font-bold mb-1'>
@@ -81,7 +109,7 @@ const Card = ({
           <div className='flex items-center mb-2'>
             <Star className='w-4 h-4 text-yellow-400 mr-1' />
             <span className='font-semibold'>
-              {property.averageRating.toFixed(1)}
+              {property.averageRating?.toFixed(1) || '0.0'}
             </span>
             <span className='text-gray-600 ml-1'>
               ({property.numberOfReviews} Reviews)

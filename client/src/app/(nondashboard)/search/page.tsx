@@ -26,6 +26,9 @@ const SearchPage = () => {
           acc[key] = value.split(',').map((v) => (v === '' ? null : Number(v)));
         } else if (key === 'coordinates') {
           acc[key] = value.split(',').map(Number);
+        } else if (key === 'amenities') {
+          // Amenities should always be an array
+          acc[key] = value && value !== 'any' ? value.split(',') : [];
         } else {
           acc[key] = value === 'any' ? null : value;
         }
@@ -37,7 +40,7 @@ const SearchPage = () => {
 
     const cleanedFilters = cleanParams(initialFilters);
     dispatch(setFilters(cleanedFilters));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchParams, dispatch]);
 
   return (
     <div

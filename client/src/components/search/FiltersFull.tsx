@@ -3,26 +3,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import {
-  AmenityEnum,
-  AmenityIcons,
-  PropertyTypeEnum,
-  PropertyTypeIcons,
+    AmenityEnum,
+    AmenityIcons,
+    PropertyTypeEnum,
+    PropertyTypeIcons,
 } from '@/lib/constants';
 import { cleanParams, cn, formatEnumString } from '@/lib/utils';
 import { FiltersState, initialState, setFilters } from '@/state';
 import { useAppSelector } from '@/state/redux';
 import { debounce } from 'lodash';
-import { Search } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 
 const FiltersFull = () => {
@@ -30,10 +29,16 @@ const FiltersFull = () => {
   const router = useRouter();
   const pathname = usePathname();
   const filters = useAppSelector((state) => state.global.filters);
-  const [localFilters, setLocalFilters] = useState(initialState.filters);
+  const [localFilters, setLocalFilters] = useState(filters);
   const isFiltersFullOpen = useAppSelector(
     (state) => state.global.isFiltersFullOpen
   );
+
+  // Sync localFilters when global filters change (e.g., from FiltersBar)
+  useEffect(() => {
+    setLocalFilters(filters);
+  }, [filters]);
+  
 
   const updateURL = debounce((newFilters: FiltersState) => {
     const cleanFilters = cleanParams(newFilters);
@@ -61,34 +66,16 @@ const FiltersFull = () => {
   };
 
   const handleAmenityChange = (amenity: AmenityEnum) => {
-    setLocalFilters((prev) => ({
-      ...prev,
-      amenities: prev.amenities.includes(amenity)
-        ? prev.amenities.filter((a) => a !== amenity)
-        : [...prev.amenities, amenity],
-    }));
-  };
-
-  const handleLocationSearch = async () => {
-    try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          localFilters.location
-        )}.json?access_token=${
-          process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
-        }&fuzzyMatch=true`
-      );
-      const data = await response.json();
-      if (data.features && data.features.length > 0) {
-        const [lng, lat] = data.features[0].center;
-        setLocalFilters((prev) => ({
-          ...prev,
-          coordinates: [lng, lat],
-        }));
-      }
-    } catch (err) {
-      console.error('Error search location:', err);
-    }
+    setLocalFilters((prev) => {
+      // Ensure amenities is always an array
+      const currentAmenities = Array.isArray(prev.amenities) ? prev.amenities : [];
+      return {
+        ...prev,
+        amenities: currentAmenities.includes(amenity)
+          ? currentAmenities.filter((a) => a !== amenity)
+          : [...currentAmenities, amenity],
+      };
+    });
   };
 
   if (!isFiltersFullOpen) return null;
@@ -96,30 +83,6 @@ const FiltersFull = () => {
   return (
     <div className='bg-white rounded-lg px-4 h-full overflow-auto pb-10'>
       <div className='flex flex-col space-y-6'>
-        {/* Location */}
-        <div>
-          <h4 className='font-bold mb-2'>Location</h4>
-          <div className='flex items-center'>
-            <Input
-              placeholder='Enter location'
-              value={filters.location}
-              onChange={(e) =>
-                setLocalFilters((prev) => ({
-                  ...prev,
-                  location: e.target.value,
-                }))
-              }
-              className='rounded-l-xl rounded-r-none border-r-0'
-            />
-            <Button
-              onClick={handleLocationSearch}
-              className='rounded-r-xl rounded-l-none border-l-none border-black shadow-none border hover:bg-primary-700 hover:text-primary-50'
-            >
-              <Search className='w-4 h-4' />
-            </Button>
-          </div>
-        </div>
-
         {/* Property Type */}
         <div>
           <h4 className='font-bold mb-2'>Property Type</h4>
@@ -133,12 +96,22 @@ const FiltersFull = () => {
                     ? 'border-black'
                     : 'border-gray-200'
                 )}
+                role='button'
+                tabIndex={0}
                 onClick={() =>
                   setLocalFilters((prev) => ({
                     ...prev,
                     propertyType: type as PropertyTypeEnum,
                   }))
                 }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    setLocalFilters((prev) => ({
+                      ...prev,
+                      propertyType: type as PropertyTypeEnum,
+                    }));
+                  }
+                }}
               >
                 <Icon className='w-6 h-6 mb-2' />
                 <span>{type}</span>
@@ -248,11 +221,18 @@ const FiltersFull = () => {
                 key={amenity}
                 className={cn(
                   'flex items-center space-x-2 p-2 border rounded-lg hover:cursor-pointer',
-                  localFilters.amenities.includes(amenity as AmenityEnum)
+                  (Array.isArray(localFilters.amenities) ? localFilters.amenities : []).includes(amenity as AmenityEnum)
                     ? 'border-black'
                     : 'border-gray-200'
                 )}
+                role='button'
+                tabIndex={0}
                 onClick={() => handleAmenityChange(amenity as AmenityEnum)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleAmenityChange(amenity as AmenityEnum);
+                  }
+                }}
               >
                 <Icon className='w-5 h-5 hover:cursor-pointer' />
                 <Label className='hover:cursor-pointer'>

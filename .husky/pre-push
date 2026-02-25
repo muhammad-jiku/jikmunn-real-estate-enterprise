@@ -1,0 +1,5 @@
+# Run type-check before pushing
+npm run type-check
+
+# Run tests before pushing  
+npm run test

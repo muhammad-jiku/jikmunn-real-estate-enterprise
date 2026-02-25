@@ -1,10 +1,11 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  AmenityEnum,
-  AmenityIcons,
-  HighlightEnum,
-  HighlightIcons,
-} from '@/lib/constants';
+import
+  {
+    AmenityEnum,
+    AmenityIcons,
+    HighlightEnum,
+    HighlightIcons,
+  } from '@/lib/constants';
 import { formatEnumString } from '@/lib/utils';
 import { useGetPropertyQuery } from '@/state/api';
 import { HelpCircle } from 'lucide-react';
@@ -16,7 +17,16 @@ const PropertyDetails = ({ propertyId }: PropertyDetailsProps) => {
     isLoading,
   } = useGetPropertyQuery(propertyId);
 
-  if (isLoading) return <>Loading...</>;
+  if (isLoading) return (
+    <div className='animate-pulse space-y-4 mb-6'>
+      <div className='h-6 bg-gray-200 rounded w-1/4'></div>
+      <div className='grid grid-cols-4 gap-8'>
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className='h-24 bg-gray-200 rounded-xl'></div>
+        ))}
+      </div>
+    </div>
+  );
   if (isError || !property) {
     return <>Property not Found</>;
   }
@@ -27,7 +37,7 @@ const PropertyDetails = ({ propertyId }: PropertyDetailsProps) => {
       <div>
         <h2 className='text-xl font-semibold my-3'>Property Amenities</h2>
         <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8'>
-          {property.amenities.map((amenity: AmenityEnum) => {
+          {property.amenities.map((amenity) => {
             const Icon = AmenityIcons[amenity as AmenityEnum] || HelpCircle;
             return (
               <div
@@ -50,7 +60,7 @@ const PropertyDetails = ({ propertyId }: PropertyDetailsProps) => {
           Highlights
         </h3>
         <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mt-4 w-full'>
-          {property.highlights.map((highlight: HighlightEnum) => {
+          {property.highlights.map((highlight) => {
             const Icon =
               HighlightIcons[highlight as HighlightEnum] || HelpCircle;
             return (

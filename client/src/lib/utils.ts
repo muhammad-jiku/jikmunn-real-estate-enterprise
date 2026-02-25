@@ -24,9 +24,7 @@ export function formatPriceValue(value: number | null, isMin: boolean) {
 export function cleanParams(params: Record<string, any>): Record<string, any> {
   return Object.fromEntries(
     Object.entries(params).filter(
-      (
-        [_, value] // eslint-disable-line @typescript-eslint/no-unused-vars
-      ) =>
+      ([_, value]) =>
         value !== undefined &&
         value !== 'any' &&
         value !== '' &&
@@ -62,23 +60,56 @@ export const createNewUserInDatabase = async (
   userRole: string,
   fetchWithBQ: any
 ) => {
-  const createEndpoint =
-    userRole?.toLowerCase() === 'manager' ? '/managers' : '/tenants';
+  const normalizedRole = userRole?.toLowerCase();
+  const createEndpoint = normalizedRole === 'manager' ? '/managers' : '/tenants';
 
-  const createUserResponse = await fetchWithBQ({
-    url: createEndpoint,
-    method: 'POST',
-    body: {
-      cognitoId: user.userId,
-      name: user.username,
-      email: idToken?.payload?.email || '',
-      phoneNumber: '',
-    },
+  const requestBody = {
+    cognitoId: user.userId,
+    name: user.username,
+    email: idToken?.payload?.email || '',
+    phoneNumber: '',
+  };
+
+  // Log the creation attempt for debugging
+  console.log(`[createNewUserInDatabase] Creating ${normalizedRole} user:`, {
+    endpoint: createEndpoint,
+    cognitoId: requestBody.cognitoId,
+    name: requestBody.name,
+    email: requestBody.email,
   });
 
-  if (createUserResponse.error) {
-    throw new Error('Failed to create user record');
+  // Validate required fields before sending
+  if (!requestBody.cognitoId) {
+    const error = 'Missing cognitoId - user.userId is undefined';
+    console.error(`[createNewUserInDatabase] ${error}`);
+    throw new Error(error);
   }
 
-  return createUserResponse;
+  if (!requestBody.name) {
+    const error = 'Missing name - user.username is undefined';
+    console.error(`[createNewUserInDatabase] ${error}`);
+    throw new Error(error);
+  }
+
+  try {
+    const createUserResponse = await fetchWithBQ({
+      url: createEndpoint,
+      method: 'POST',
+      body: requestBody,
+    });
+
+    if (createUserResponse.error) {
+      console.error('[createNewUserInDatabase] API error:', createUserResponse.error);
+      const errorMessage = createUserResponse.error?.data?.message || 
+                          createUserResponse.error?.error || 
+                          'Failed to create user record';
+      throw new Error(errorMessage);
+    }
+
+    console.log('[createNewUserInDatabase] User created successfully:', createUserResponse.data);
+    return createUserResponse;
+  } catch (error: any) {
+    console.error('[createNewUserInDatabase] Exception:', error);
+    throw error;
+  }
 };

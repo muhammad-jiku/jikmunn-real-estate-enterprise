@@ -6,6 +6,15 @@ import { useEffect, useRef } from 'react';
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN as string;
 
+// Validate coordinates are within valid ranges
+const isValidCoordinate = (lng: number | undefined | null, lat: number | undefined | null): boolean => {
+  if (lng === undefined || lng === null || lat === undefined || lat === null) return false;
+  if (lng === 0 && lat === 0) return false;
+  if (lat < -90 || lat > 90) return false;
+  if (lng < -180 || lng > 180) return false;
+  return true;
+};
+
 const PropertyLocation = ({ propertyId }: PropertyDetailsProps) => {
   const {
     data: property,
@@ -14,25 +23,27 @@ const PropertyLocation = ({ propertyId }: PropertyDetailsProps) => {
   } = useGetPropertyQuery(propertyId);
   const mapContainerRef = useRef(null);
 
+  const hasValidCoordinates = property && isValidCoordinate(
+    property.location?.coordinates?.longitude,
+    property.location?.coordinates?.latitude
+  );
+
   useEffect(() => {
-    if (isLoading || isError || !property) return;
+    if (isLoading || isError || !property || !hasValidCoordinates) return;
+
+    const lng = property.location?.coordinates?.longitude ?? 0;
+    const lat = property.location?.coordinates?.latitude ?? 0;
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current!,
       // style: 'mapbox://styles/muhammadjiku/cmdrd3kgo005701sh2c9m97nz', // minimo
       style: 'mapbox://styles/muhammadjiku/cmfdjt786008r01sd6aib5e48', // default
-      center: [
-        property.location.coordinates.longitude,
-        property.location.coordinates.latitude,
-      ],
+      center: [lng, lat],
       zoom: 14,
     });
 
     const marker = new mapboxgl.Marker()
-      .setLngLat([
-        property.location.coordinates.longitude,
-        property.location.coordinates.latitude,
-      ])
+      .setLngLat([lng, lat])
       .addTo(map);
 
     const markerElement = marker.getElement();
@@ -40,9 +51,14 @@ const PropertyLocation = ({ propertyId }: PropertyDetailsProps) => {
     if (path) path.setAttribute('fill', '#000000');
 
     return () => map.remove();
-  }, [property, isError, isLoading]);
+  }, [property, isError, isLoading, hasValidCoordinates]);
 
-  if (isLoading) return <>Loading...</>;
+  if (isLoading) return (
+    <div className='animate-pulse py-16'>
+      <div className='h-6 bg-gray-200 rounded w-1/4 mb-4'></div>
+      <div className='h-80 bg-gray-200 rounded-xl'></div>
+    </div>
+  );
   if (isError || !property) {
     return <>Property not Found</>;
   }

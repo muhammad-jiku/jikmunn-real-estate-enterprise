@@ -1,6 +1,6 @@
 # Jikmunn Real Estate Enterprise
 
-_A full-stack real estate management platform built with Next.js, Express, PostgreSQL, and AWS._
+_A full-stack real estate management platform built with Next.js, Express, Supabase, and AWS Cognito._
 
 Rentiful is a real estate application built under the Jikmunn Real Estate Enterprise project. It enables tenants to sign in, search for suitable properties, and complete purchases seamlessly, while managers can efficiently oversee and manage leases.
 
@@ -34,9 +34,10 @@ This project is currently available, with the following features:
 
 - **Frontend:** Next.js with TailwindCSS ⚡ – fast, scalable UI development
 - **Backend:** Express.js with Prisma ORM 🔗 – efficient API and database handling
-- **Database:** PostgreSQL 🐘 – reliable relational database
-- **Storage:** Amazon S3 ☁️ – secure and scalable file storage
-- **Deployment:** AWS (EC2, RDS, S3, Amplify) 🚀 – cloud-native deployment
+- **Database:** Supabase (PostgreSQL) 🐘 – reliable relational database with PostGIS
+- **Authentication:** AWS Cognito 🔐 – secure user authentication
+- **Storage:** Cloudinary 🖼️ – optimized image management
+- **Deployment:** Vercel 🚀 – serverless deployment for both client and server
 
 ---
 
@@ -86,11 +87,18 @@ yarn
 Create an `.env` file inside the `server` folder:
 
 ```bash
-AWS_REGION= # Your AWS Region
-S3_BUCKET_NAME= # Your S3 Bucket Name
-AWS_ACCESS_KEY_ID= # Your AWS IAM Account Access Key
-AWS_SECRET_ACCESS_KEY= # Your AWS IAM Account Secret Access Key
-DATABASE_URL= # Your RDS PostgreSQL Database URL
+PORT=8000 # Server port
+DATABASE_URL= # Your Supabase PostgreSQL Connection String
+CLOUDINARY_CLOUD_NAME= # Your Cloudinary Cloud Name
+CLOUDINARY_API_KEY= # Your Cloudinary API Key
+CLOUDINARY_API_SECRET= # Your Cloudinary API Secret
+```
+
+Run database migrations:
+
+```bash
+yarn prisma:generate
+npx prisma migrate deploy
 ```
 
 Run the backend server:
