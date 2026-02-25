@@ -5,10 +5,10 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'prisma/**'],
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
   },
   {
-    files: ['src/**/*.ts'],
+    files: ['**/*.ts'],
     languageOptions: {
       parserOptions: {
         project: './tsconfig.json',
@@ -26,8 +26,8 @@ export default tseslint.config(
       ],
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-non-null-assertion': 'warn',
       '@typescript-eslint/no-namespace': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
     },
   }

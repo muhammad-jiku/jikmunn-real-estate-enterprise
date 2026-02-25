@@ -46,7 +46,7 @@
       "eslint --fix --config client/eslint.config.mjs",
       "prettier --write"
     ],
-    "server/**/*.ts": [
+    "server/src/**/*.ts": [
       "eslint --fix --config server/eslint.config.mjs",
       "prettier --write"
     ]

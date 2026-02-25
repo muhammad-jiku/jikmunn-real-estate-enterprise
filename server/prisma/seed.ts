@@ -3,6 +3,7 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
+import logger from '../src/lib/logger';
 
 const prisma = new PrismaClient();
 
@@ -26,9 +27,9 @@ async function insertLocationData(locations: any[]) {
         INSERT INTO "Location" ("id", "country", "city", "state", "address", "postalCode", "latitude", "longitude") 
         VALUES (${id}, ${country}, ${city}, ${state}, ${address}, ${postalCode}, ${latitude}, ${longitude});
       `;
-      console.log(`Inserted location for ${city}`);
+      logger.info(`Inserted location for ${city}`);
     } catch (error) {
-      console.error(`Error inserting location for ${city}:`, error);
+      logger.error(`Error inserting location for ${city}:`, error);
     }
   }
 }
@@ -41,9 +42,9 @@ async function insertManagerData(managers: any[]) {
         INSERT INTO "Manager" ("id", "cognitoId", "name", "email", "phoneNumber") 
         VALUES (${id}, ${cognitoId}, ${name}, ${email}, ${phoneNumber});
       `;
-      console.log(`Inserted manager: ${name}`);
+      logger.info(`Inserted manager: ${name}`);
     } catch (error) {
-      console.error(`Error inserting manager ${name}:`, error);
+      logger.error(`Error inserting manager ${name}:`, error);
     }
   }
 }
@@ -86,9 +87,9 @@ async function insertPropertyData(properties: any[]) {
           ${numberOfReviews}, ${locationId}, ${managerCognitoId}
         );
       `;
-      console.log(`Inserted property: ${name}`);
+      logger.info(`Inserted property: ${name}`);
     } catch (error) {
-      console.error(`Error inserting property ${name}:`, error);
+      logger.error(`Error inserting property ${name}:`, error);
     }
   }
 }
@@ -125,9 +126,9 @@ async function insertTenantData(tenants: any[]) {
         }
       }
 
-      console.log(`Inserted tenant: ${name}`);
+      logger.info(`Inserted tenant: ${name}`);
     } catch (error) {
-      console.error(`Error inserting tenant ${name}:`, error);
+      logger.error(`Error inserting tenant ${name}:`, error);
     }
   }
 }
@@ -140,9 +141,9 @@ async function insertLeaseData(leases: any[]) {
         INSERT INTO "Lease" ("id", "startDate", "endDate", "rent", "deposit", "propertyId", "tenantCognitoId") 
         VALUES (${id}, ${startDate}::timestamp, ${endDate}::timestamp, ${rent}, ${deposit}, ${propertyId}, ${tenantCognitoId});
       `;
-      console.log(`Inserted lease: ${id}`);
+      logger.info(`Inserted lease: ${id}`);
     } catch (error) {
-      console.error(`Error inserting lease ${id}:`, error);
+      logger.error(`Error inserting lease ${id}:`, error);
     }
   }
 }
@@ -164,7 +165,7 @@ async function resetSequence(modelName: string) {
     SELECT setval(pg_get_serial_sequence('${quotedModelName}', 'id'), coalesce(max(id)+1, ${nextId}), false) FROM ${quotedModelName};
   `)
   );
-  console.log(`Reset sequence for ${modelName} to ${nextId}`);
+  logger.info(`Reset sequence for ${modelName} to ${nextId}`);
 }
 
 async function deleteAllData(orderedFileNames: string[]) {
@@ -183,30 +184,30 @@ async function deleteAllData(orderedFileNames: string[]) {
   for (const modelNameCamel of dependentModels) {
     const model = (prisma as any)[modelNameCamel];
     if (!model) {
-      console.error(`Model ${modelNameCamel} not found in Prisma client`);
+      logger.error(`Model ${modelNameCamel} not found in Prisma client`);
       continue;
     }
     try {
       await model.deleteMany({});
-      console.log(`Cleared data from ${modelNameCamel}`);
+      logger.info(`Cleared data from ${modelNameCamel}`);
     } catch (error) {
-      console.error(`Error clearing data from ${modelNameCamel}:`, error);
+      logger.error(`Error clearing data from ${modelNameCamel}:`, error);
     }
   }
 
   // Clear tenant favorites and properties relations
   try {
     await prisma.$executeRaw`DELETE FROM "_TenantFavorites"`;
-    console.log('Cleared _TenantFavorites relation');
+    logger.info('Cleared _TenantFavorites relation');
   } catch (error) {
-    console.error('Error clearing _TenantFavorites:', error);
+    logger.error('Error clearing _TenantFavorites:', error);
   }
 
   try {
     await prisma.$executeRaw`DELETE FROM "_TenantProperties"`;
-    console.log('Cleared _TenantProperties relation');
+    logger.info('Cleared _TenantProperties relation');
   } catch (error) {
-    console.error('Error clearing _TenantProperties:', error);
+    logger.error('Error clearing _TenantProperties:', error);
   }
 
   // Now delete main tables in reverse order
@@ -218,14 +219,14 @@ async function deleteAllData(orderedFileNames: string[]) {
     const modelNameCamel = toCamelCase(modelName);
     const model = (prisma as any)[modelNameCamel];
     if (!model) {
-      console.error(`Model ${modelName} not found in Prisma client`);
+      logger.error(`Model ${modelName} not found in Prisma client`);
       continue;
     }
     try {
       await model.deleteMany({});
-      console.log(`Cleared data from ${modelName}`);
+      logger.info(`Cleared data from ${modelName}`);
     } catch (error) {
-      console.error(`Error clearing data from ${modelName}:`, error);
+      logger.error(`Error clearing data from ${modelName}:`, error);
     }
   }
 }
@@ -268,15 +269,14 @@ async function main() {
       const model = (prisma as any)[modelNameCamel];
       try {
         for (const item of jsonData) {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { id: _id, ...dataWithoutId } = item;
           await model.create({
             data: dataWithoutId,
           });
         }
-        console.log(`Seeded ${modelName} with data from ${fileName}`);
+        logger.info(`Seeded ${modelName} with data from ${fileName}`);
       } catch (error) {
-        console.error(`Error seeding data for ${modelName}:`, error);
+        logger.error(`Error seeding data for ${modelName}:`, error);
       }
     }
 
@@ -288,5 +288,5 @@ async function main() {
 }
 
 main()
-  .catch((e) => console.error(e))
+  .catch((e) => logger.error(e))
   .finally(async () => await prisma.$disconnect());
