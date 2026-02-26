@@ -1,25 +1,36 @@
 'use client';
 
 import {
-    api, Notification,
-    useDeleteNotificationMutation,
-    useGetAuthUserQuery,
-    useGetNotificationsQuery,
-    useMarkAllNotificationsReadMutation,
-    useMarkNotificationReadMutation
+  api,
+  Notification,
+  useDeleteNotificationMutation,
+  useGetAuthUserQuery,
+  useGetNotificationsQuery,
+  useMarkAllNotificationsReadMutation,
+  useMarkNotificationReadMutation,
 } from '@/state/api';
 import { PusherEvents, usePusher } from '@/state/pusher';
 import { useAppDispatch } from '@/state/redux';
-import { Bell, Check, CheckCheck, DollarSign, FileText, Home, MessageSquare, Wrench, X } from 'lucide-react';
+import {
+  Bell,
+  Check,
+  CheckCheck,
+  DollarSign,
+  FileText,
+  Home,
+  MessageSquare,
+  Wrench,
+  X,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 
 const notificationIcons: Record<string, React.ReactNode> = {
@@ -66,7 +77,9 @@ export function NotificationDropdown() {
     };
   }, [channel, dispatch, refetch]);
 
-  const unreadCount = notifications?.filter((n) => !n.isRead).length || 0;
+  const unreadCount = Array.isArray(notifications)
+    ? notifications.filter((n) => !n.isRead).length
+    : 0;
 
   const handleMarkRead = async (id: number) => {
     await markRead(id);
@@ -134,9 +147,9 @@ export function NotificationDropdown() {
             </button>
           )}
         </div>
-        
+
         <div className="max-h-96 overflow-y-auto">
-          {notifications && notifications.length > 0 ? (
+          {Array.isArray(notifications) && notifications.length > 0 ? (
             notifications.slice(0, 10).map((notification: Notification) => (
               <DropdownMenuItem
                 key={notification.id}
@@ -152,9 +165,7 @@ export function NotificationDropdown() {
                   <p className={`text-sm ${!notification.isRead ? 'font-medium' : ''}`}>
                     {notification.message}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {getTimeAgo(notification.createdAt)}
-                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{getTimeAgo(notification.createdAt)}</p>
                 </div>
                 <div className="flex-shrink-0 flex items-center gap-1">
                   {!notification.isRead && (

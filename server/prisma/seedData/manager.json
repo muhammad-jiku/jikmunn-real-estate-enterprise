@@ -1,14 +1,14 @@
 [
   {
     "id": 1,
-    "cognitoId": "us-east-01-7901-7096-a14f-11a34258b2b3",
+    "cognitoId": "user_3ACaMNzMToawaq2AK87VCb0tYYh",
     "name": "Jonas Martha",
     "email": "jonasmartha805@gmail.com",
     "phoneNumber": "+1 (555) 123-4567"
   },
   {
     "id": 2,
-    "cognitoId": "us-east-01-1201-70c7-466e-5aa02206119f",
+    "cognitoId": "user_3ACb4HwwnqvtR0v9IYoYjlre3UP",
     "name": "Muhammad Jiku",
     "email": "muhammadjiku164364@gmail.com",
     "phoneNumber": "+1 (555) 987-6543"

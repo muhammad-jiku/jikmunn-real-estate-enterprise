@@ -77,13 +77,17 @@ const listApplications = async (req: Request, res: Response): Promise<void> => {
       })
     );
 
-    // Transform to DTOs - removes cognitoIds, internal fields
+    // Transform to DTOs - includes necessary fields for display
     const formattedApplicationsDTO = formattedApplications.map((app) => ({
       id: app.id,
       applicationDate: app.applicationDate,
       status: app.status,
       name: app.name,
+      email: app.email,
+      phoneNumber: app.phoneNumber,
       message: app.message,
+      propertyId: app.propertyId,
+      tenantCognitoId: app.tenantCognitoId,
       property: app.property
         ? {
             id: app.property.id,
@@ -91,6 +95,15 @@ const listApplications = async (req: Request, res: Response): Promise<void> => {
             address: app.property.address,
             pricePerMonth: app.property.pricePerMonth,
             photoUrls: app.property.photoUrls,
+            location: app.property.location
+              ? {
+                  address: app.property.location.address,
+                  city: app.property.location.city,
+                  state: app.property.location.state,
+                  country: app.property.location.country,
+                }
+              : null,
+            managerCognitoId: app.property.managerCognitoId,
           }
         : null,
       manager: app.manager
@@ -99,6 +112,15 @@ const listApplications = async (req: Request, res: Response): Promise<void> => {
             name: app.manager.name,
             email: app.manager.email,
             phoneNumber: app.manager.phoneNumber,
+            cognitoId: app.manager.cognitoId,
+          }
+        : null,
+      tenant: app.tenant
+        ? {
+            id: app.tenant.id,
+            name: app.tenant.name,
+            email: app.tenant.email,
+            phoneNumber: app.tenant.phoneNumber,
           }
         : null,
       lease: app.lease
@@ -138,7 +160,7 @@ const createApplication = async (req: Request, res: Response): Promise<void> => 
     });
 
     if (!property) {
-      res.status(404).json({ message: 'Property not found' });
+      sendNotFound(res, 'Property');
       return;
     }
 
@@ -152,9 +174,7 @@ const createApplication = async (req: Request, res: Response): Promise<void> => 
     });
 
     if (existingApplication) {
-      res.status(400).json({
-        message: 'You already have an active application for this property',
-      });
+      sendBadRequest(res, 'You already have an active application for this property');
       return;
     }
 

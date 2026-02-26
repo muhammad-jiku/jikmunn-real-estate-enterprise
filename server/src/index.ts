@@ -1,11 +1,12 @@
+/* CONFIGURATIONS - must be first to load dotenv */
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import { config } from './config/index.config';
 /* ROUTE IMPORT */
 import routes from './app/v1/routes';
-import { config } from './config/index.config';
 import { initializeScheduledJobs } from './lib/scheduledJobs';
 
 /* CONFIGURATIONS */

@@ -1,19 +1,20 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import
-  {
-    api,
-    Conversation,
-    Message,
-    useGetAuthUserQuery,
-    useGetConversationsQuery,
-    useGetMessagesQuery,
-    useSendMessageMutation,
-  } from '@/state/api';
+import {
+  api,
+  Conversation,
+  Message,
+  useGetAuthUserQuery,
+  useGetConversationsQuery,
+  useGetMessagesQuery,
+  useSendMessageMutation,
+} from '@/state/api';
 import { PusherEvents, usePusher } from '@/state/pusher';
 import { useAppDispatch } from '@/state/redux';
 import { ArrowLeft, MessageSquare, Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -81,14 +82,18 @@ export function MessageInbox() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedPartner || !authUser) return;
 
-    await sendMessage({
-      content: newMessage.trim(),
-      receiverCognitoId: selectedPartner.id,
-      receiverType: selectedPartner.type,
-    });
+    try {
+      await sendMessage({
+        content: newMessage.trim(),
+        receiverCognitoId: selectedPartner.id,
+        receiverType: selectedPartner.type,
+      }).unwrap();
 
-    setNewMessage('');
-    refetchMessages();
+      setNewMessage('');
+      refetchMessages();
+    } catch (error) {
+      toast.error('Failed to send message');
+    }
   };
 
   const formatTime = (dateStr: string) => {
@@ -117,11 +122,7 @@ export function MessageInbox() {
   return (
     <div className="flex h-[600px] border rounded-lg overflow-hidden">
       {/* Conversations List */}
-      <div
-        className={`w-full md:w-1/3 border-r ${
-          selectedPartner ? 'hidden md:block' : ''
-        }`}
-      >
+      <div className={`w-full md:w-1/3 border-r ${selectedPartner ? 'hidden md:block' : ''}`}>
         <div className="p-4 border-b">
           <h2 className="font-semibold">Messages</h2>
         </div>
@@ -147,9 +148,7 @@ export function MessageInbox() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <p className="font-medium truncate">{conv.partnerName}</p>
-                    <span className="text-xs text-gray-500">
-                      {formatTime(conv.lastMessageAt)}
-                    </span>
+                    <span className="text-xs text-gray-500">{formatTime(conv.lastMessageAt)}</span>
                   </div>
                   <p className="text-sm text-gray-500 truncate">{conv.lastMessage}</p>
                 </div>
@@ -170,19 +169,12 @@ export function MessageInbox() {
       </div>
 
       {/* Messages View */}
-      <div
-        className={`flex-1 flex flex-col ${
-          selectedPartner ? '' : 'hidden md:flex'
-        }`}
-      >
+      <div className={`flex-1 flex flex-col ${selectedPartner ? '' : 'hidden md:flex'}`}>
         {selectedPartner ? (
           <>
             {/* Chat Header */}
             <div className="p-4 border-b flex items-center gap-3">
-              <button
-                onClick={() => setSelectedPartner(null)}
-                className="md:hidden p-1"
-              >
+              <button onClick={() => setSelectedPartner(null)} className="md:hidden p-1">
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <Avatar>
@@ -190,17 +182,14 @@ export function MessageInbox() {
               </Avatar>
               <div>
                 <p className="font-medium">{selectedPartner.name}</p>
-                <p className="text-xs text-gray-500 capitalize">
-                  {selectedPartner.type}
-                </p>
+                <p className="text-xs text-gray-500 capitalize">{selectedPartner.type}</p>
               </div>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages?.map((msg: Message) => {
-                const isOwnMessage =
-                  msg.senderCognitoId === authUser.cognitoInfo?.userId;
+                const isOwnMessage = msg.senderCognitoId === authUser.cognitoInfo?.userId;
                 return (
                   <div
                     key={msg.id}
@@ -208,9 +197,7 @@ export function MessageInbox() {
                   >
                     <div
                       className={`max-w-[70%] p-3 rounded-lg ${
-                        isOwnMessage
-                          ? 'bg-secondary-500 text-white'
-                          : 'bg-gray-100 text-gray-900'
+                        isOwnMessage ? 'bg-secondary-500 text-white' : 'bg-gray-100 text-gray-900'
                       }`}
                     >
                       <p>{msg.content}</p>

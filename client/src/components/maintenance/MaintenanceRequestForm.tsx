@@ -1,31 +1,21 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import {
-    MaintenanceRequest,
-    useCreateMaintenanceRequestMutation,
-    useGetAuthUserQuery,
-    useGetTenantMaintenanceRequestsQuery,
+  MaintenanceRequest,
+  useCreateMaintenanceRequestMutation,
+  useGetAuthUserQuery,
+  useGetTenantMaintenanceRequestsQuery,
 } from '@/state/api';
 import { AlertTriangle, CheckCircle, Clock, Plus, Wrench, XCircle } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '../ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Textarea } from '../ui/textarea';
 
 interface MaintenanceRequestFormProps {
@@ -73,18 +63,23 @@ export function MaintenanceRequestForm({ propertyId, propertyName }: Maintenance
     e.preventDefault();
     if (!authUser?.cognitoInfo?.userId) return;
 
-    await createRequest({
-      title,
-      description,
-      priority,
-      propertyId,
-      tenantCognitoId: authUser.cognitoInfo.userId,
-    });
+    try {
+      await createRequest({
+        title,
+        description,
+        priority,
+        propertyId,
+        tenantCognitoId: authUser.cognitoInfo.userId,
+      }).unwrap();
 
-    setTitle('');
-    setDescription('');
-    setPriority('Medium');
-    setIsOpen(false);
+      setTitle('');
+      setDescription('');
+      setPriority('Medium');
+      setIsOpen(false);
+      toast.success('Maintenance request submitted');
+    } catch (error) {
+      toast.error('Failed to submit maintenance request');
+    }
   };
 
   return (
@@ -103,9 +98,7 @@ export function MaintenanceRequestForm({ propertyId, propertyName }: Maintenance
               <DialogTitle>Submit Maintenance Request</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {propertyName && (
-                <p className="text-sm text-gray-600">Property: {propertyName}</p>
-              )}
+              {propertyName && <p className="text-sm text-gray-600">Property: {propertyName}</p>}
               <div>
                 <Label htmlFor="title">Issue Title</Label>
                 <Input
@@ -158,17 +151,16 @@ export function MaintenanceRequestForm({ propertyId, propertyName }: Maintenance
       <div className="space-y-3">
         {propertyRequests.length > 0 ? (
           propertyRequests.map((request: MaintenanceRequest) => (
-            <div
-              key={request.id}
-              className="border rounded-lg p-4 space-y-2"
-            >
+            <div key={request.id} className="border rounded-lg p-4 space-y-2">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
                   <Wrench className="w-5 h-5 text-gray-500" />
                   <h4 className="font-medium">{request.title}</h4>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className={priorityColors[request.priority as keyof typeof priorityColors]}>
+                  <Badge
+                    className={priorityColors[request.priority as keyof typeof priorityColors]}
+                  >
                     {request.priority === 'Urgent' && <AlertTriangle className="w-3 h-3 mr-1" />}
                     {request.priority}
                   </Badge>

@@ -44,12 +44,23 @@ export function SendMessageDialog({
     if (!messageContent.trim()) return;
 
     try {
-      await sendMessage({
+      const payload: {
+        content: string;
+        receiverCognitoId: string;
+        receiverType: 'tenant' | 'manager';
+        propertyId?: number;
+      } = {
         content: messageContent.trim(),
         receiverCognitoId: recipientId,
         receiverType: recipientType,
-        propertyId,
-      }).unwrap();
+      };
+
+      // Only include propertyId if it's defined
+      if (propertyId !== undefined && propertyId !== null) {
+        payload.propertyId = propertyId;
+      }
+
+      await sendMessage(payload).unwrap();
 
       setMessageContent('');
       onClose();

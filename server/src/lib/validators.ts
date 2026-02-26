@@ -102,7 +102,7 @@ export const updateMaintenanceSchema = z.object({
 export const createMessageSchema = z.object({
   body: z.object({
     content: z.string().min(1).max(2000),
-    propertyId: z.number().int().positive().optional(),
+    propertyId: z.number().int().positive().optional().nullable(),
     receiverCognitoId: z.string(),
     receiverType: z.enum(['tenant', 'manager']),
   }),

@@ -67,7 +67,7 @@ const ContactWidget = ({ onOpenModal, propertyId }: ContactWidgetProps) => {
           <div>
             <p>Contact This Property</p>
             <div className="text-lg font-bold text-primary-800">
-              {property?.manager?.phoneNumber || '(424) 340-5574'}
+              {property?.manager?.phoneNumber || 'Not available'}
             </div>
           </div>
         </div>

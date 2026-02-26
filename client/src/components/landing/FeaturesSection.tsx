@@ -25,26 +25,24 @@ const itemVariants = {
 const FeaturesSection = () => {
   return (
     <motion.div
-      initial='hidden'
-      whileInView='visible'
+      initial="hidden"
+      whileInView="visible"
       viewport={{ once: true }}
       variants={containerVariants}
-      className='py-24 px-6 sm:px-8 lg:px-12 xl:px-16 bg-white'
+      className="py-24 px-6 sm:px-8 lg:px-12 xl:px-16 bg-white"
     >
-      <div className='max-w-4xl xl:max-w-6xl mx-auto'>
+      <div className="max-w-4xl xl:max-w-6xl mx-auto">
         <motion.h2
           variants={itemVariants}
-          className='text-3xl font-bold text-center mb-12 w-full sm:w-2/3 mx-auto'
+          className="text-3xl font-bold text-center mb-12 w-full sm:w-2/3 mx-auto"
         >
           Quickly find the home you want using our effective search filters!
         </motion.h2>
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 xl:gap-16'>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 xl:gap-16">
           {[0, 1, 2].map((index) => (
             <motion.div key={index} variants={itemVariants}>
               <FeatureCard
-                imageSrc={`https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/landing-search${
-                  3 - index
-                }.png`}
+                imageSrc={`/landing-search${3 - index}.png`}
                 fallbackSrc={`/landing-search${3 - index}.png`}
                 title={
                   [
@@ -95,22 +93,22 @@ const FeatureCard = ({
   };
 
   return (
-    <div className='text-center'>
-      <div className='p-4 rounded-lg mb-4 flex items-center justify-center h-48'>
+    <div className="text-center">
+      <div className="p-4 rounded-lg mb-4 flex items-center justify-center h-48">
         <Image
           src={currentSrc}
           width={400}
           height={400}
-          className='w-full h-full object-contain'
+          className="w-full h-full object-contain"
           alt={title}
           onError={handleImageError}
         />
       </div>
-      <h3 className='text-xl font-semibold mb-2'>{title}</h3>
-      <p className='mb-4'>{description}</p>
+      <h3 className="text-xl font-semibold mb-2">{title}</h3>
+      <p className="mb-4">{description}</p>
       <Link
         href={linkHref}
-        className='inline-block border border-gray-300 rounded-sm px-4 py-2 hover:bg-gray-100'
+        className="inline-block border border-gray-300 rounded-sm px-4 py-2 hover:bg-gray-100"
         scroll={false}
       >
         {linkText}

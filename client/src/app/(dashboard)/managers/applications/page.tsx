@@ -38,6 +38,60 @@ const Applications = () => {
     await updateApplicationStatus({ id, status });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleDownloadAgreement = (application: any) => {
+    const agreementContent = `
+RENTAL AGREEMENT
+================
+
+Date: ${new Date().toLocaleDateString()}
+
+PROPERTY DETAILS
+----------------
+Property: ${application.property?.name || 'N/A'}
+Address: ${application.property?.address || 'N/A'}
+Monthly Rent: $${application.property?.pricePerMonth || 'N/A'}
+
+TENANT INFORMATION
+------------------
+Name: ${application.name}
+Email: ${application.email}
+Phone: ${application.phoneNumber}
+
+LEASE TERMS
+-----------
+${
+  application.lease
+    ? `
+Start Date: ${new Date(application.lease.startDate).toLocaleDateString()}
+End Date: ${new Date(application.lease.endDate).toLocaleDateString()}
+Monthly Rent: $${application.lease.rent}
+`
+    : 'Lease terms to be determined.'
+}
+
+APPLICATION STATUS
+------------------
+Status: ${application.status}
+Application Date: ${new Date(application.applicationDate).toLocaleDateString()}
+
+This document serves as a confirmation of the approved rental application.
+
+---
+Generated on ${new Date().toLocaleString()}
+    `.trim();
+
+    const blob = new Blob([agreementContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rental-agreement-${application.property?.name?.replace(/\s+/g, '-').toLowerCase() || 'property'}-${application.name.replace(/\s+/g, '-').toLowerCase()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) return <Loading />;
   if (isError || !applications) return <div>Error fetching applications</div>;
 
@@ -113,6 +167,7 @@ const Applications = () => {
                         <button
                           className={`bg-white border border-gray-300 text-gray-700 py-2 px-4
                           rounded-md flex items-center justify-center hover:bg-primary-700 hover:text-primary-50`}
+                          onClick={() => handleDownloadAgreement(application)}
                         >
                           <Download className="w-5 h-5 mr-2" />
                           Download Agreement

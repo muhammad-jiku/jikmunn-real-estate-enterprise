@@ -188,24 +188,28 @@ const getProperties = async (req: Request, res: Response): Promise<void> => {
 
     // Sanitize properties - raw query returns all fields, need to clean up
 
-    const propertiesDTO = (properties as any[]).map((property: any) => ({
-      id: property.id,
-      name: property.name,
-      description: property.description,
-      pricePerMonth: property.pricePerMonth,
-      beds: property.beds,
-      baths: property.baths,
-      squareFeet: property.squareFeet,
-      propertyType: property.propertyType,
-      photoUrls: property.photoUrls,
-      amenities: property.amenities,
-      isPetsAllowed: property.isPetsAllowed,
-      isParkingIncluded: property.isParkingIncluded,
-      averageRating: property.averageRating,
-      numberOfReviews: property.numberOfReviews,
-      postedDate: property.postedDate,
-      location: property.location,
-    }));
+    const propertiesDTO = (properties as any[]).map((property: any) => {
+      // Strip internal location.id from the response
+      const { id: _locationId, ...locationWithoutId } = property.location || {};
+      return {
+        id: property.id,
+        name: property.name,
+        description: property.description,
+        pricePerMonth: property.pricePerMonth,
+        beds: property.beds,
+        baths: property.baths,
+        squareFeet: property.squareFeet,
+        propertyType: property.propertyType,
+        photoUrls: property.photoUrls,
+        amenities: property.amenities,
+        isPetsAllowed: property.isPetsAllowed,
+        isParkingIncluded: property.isParkingIncluded,
+        averageRating: property.averageRating,
+        numberOfReviews: property.numberOfReviews,
+        postedDate: property.postedDate,
+        location: locationWithoutId,
+      };
+    });
 
     sendSuccess(res, propertiesDTO, 'Properties retrieved successfully');
   } catch (error: any) {
@@ -225,6 +229,7 @@ const getProperty = async (req: Request, res: Response): Promise<void> => {
         manager: {
           select: {
             id: true,
+            cognitoId: true,
             name: true,
             email: true,
             phoneNumber: true,
@@ -234,9 +239,19 @@ const getProperty = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (property) {
-      // Transform to DTO - removes managerCognitoId, locationId, etc.
-
-      const propertyDTO = toPropertyDetailDTO(property as any);
+      // Transform to DTO but include manager cognitoId for messaging
+      const propertyDTO = {
+        ...toPropertyDetailDTO(property as any),
+        manager: property.manager
+          ? {
+              id: property.manager.id,
+              cognitoId: property.manager.cognitoId,
+              name: property.manager.name,
+              email: property.manager.email,
+              phoneNumber: property.manager.phoneNumber,
+            }
+          : null,
+      };
       sendSuccess(res, propertyDTO, 'Property retrieved successfully');
     } else {
       sendNotFound(res, 'Property');

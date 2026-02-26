@@ -1,10 +1,8 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { createClerkClient, verifyToken } from '@clerk/express';
 import { NextFunction, Request, Response } from 'express';
-import jwt, { JwtPayload } from 'jsonwebtoken';
 
-interface DecodedToken extends JwtPayload {
-  sub: string;
-  'custom:role'?: string;
-}
+const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 declare global {
   namespace Express {
@@ -17,21 +15,39 @@ declare global {
   }
 }
 
+/**
+ * Authentication middleware using Clerk
+ * Verifies JWT token and checks role-based access
+ */
 export const auth = (allowedRoles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const token = req.headers.authorization?.split(' ')[1];
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const authHeader = req.headers.authorization;
 
-    if (!token) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({ message: 'Unauthorized' });
       return;
     }
 
+    const token = authHeader.split(' ')[1];
+
     try {
-      const decoded = jwt.decode(token) as DecodedToken;
-      const userRole = decoded['custom:role'] || '';
+      // Verify the token with Clerk
+      const verifiedToken = await verifyToken(token, {
+        secretKey: process.env.CLERK_SECRET_KEY!,
+      });
+      const userId = verifiedToken.sub;
+
+      if (!userId) {
+        res.status(401).json({ message: 'Invalid token' });
+        return;
+      }
+
+      // Get user details to check role from unsafeMetadata (client-writable)
+      const user = await clerkClient.users.getUser(userId);
+      const userRole = (user.unsafeMetadata?.role as string) || 'tenant';
 
       req.user = {
-        id: decoded.sub,
+        id: userId,
         role: userRole,
       };
 
@@ -41,12 +57,12 @@ export const auth = (allowedRoles: string[]) => {
         res.status(403).json({ message: 'Access Denied' });
         return;
       }
-    } catch {
-      // console.log('Failed to decode token:', err);
-      res.status(400).json({ message: 'Invalid token' });
+
+      next();
+    } catch (error) {
+      console.error('Auth middleware error:', error);
+      res.status(401).json({ message: 'Authentication failed' });
       return;
     }
-
-    next();
   };
 };

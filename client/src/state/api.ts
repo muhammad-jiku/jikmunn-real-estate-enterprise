@@ -1,14 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { getCachedUserInfo, getFreshToken } from '@/lib/authStore';
 import { cleanParams, createNewUserInDatabase, withToast } from '@/lib/utils';
-import
-  {
-    Manager,
-    Payment,
-    Property,
-    Tenant
-  } from '@/types/prismaTypes';
+import { Manager, Payment, Property, Tenant } from '@/types/prismaTypes';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth';
 import { FiltersState } from '.';
 
 // New types for added features
@@ -57,9 +51,10 @@ export interface Message {
   content: string;
   propertyId: number | null;
   senderCognitoId: string;
+  senderName?: string;
   senderType: 'tenant' | 'manager';
-  receiverCognitoId: string;
-  receiverType: 'tenant' | 'manager';
+  receiverCognitoId?: string;
+  receiverType?: 'tenant' | 'manager';
   createdAt: string;
   property?: Property;
 }
@@ -73,22 +68,56 @@ export interface Conversation {
   unreadCount: number;
 }
 
-export const api = createApi({
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-    prepareHeaders: async (headers) => {
-      try {
-        const session = await fetchAuthSession();
-        const { idToken } = session.tokens ?? {};
-        if (idToken) {
-          headers.set('Authorization', `Bearer ${idToken}`);
-        }
-      } catch {
-        // User not authenticated - continue without auth header for public endpoints
+// Custom baseQuery that unwraps the server's wrapped response format
+// Server returns: { success: boolean, message: string, data: T }
+// Client expects: T (the raw data)
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+  prepareHeaders: async (headers) => {
+    try {
+      // Get a fresh token for each request to avoid expiration issues
+      const token = await getFreshToken();
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
       }
-      return headers;
-    },
-  }),
+    } catch {
+      // User not authenticated - continue without auth header for public endpoints
+    }
+    return headers;
+  },
+});
+
+const unwrappingBaseQuery: any = async (args: any, api: any, extraOptions: any) => {
+  const result = await rawBaseQuery(args, api, extraOptions);
+
+  // If the response is successful and has the wrapped format, unwrap it
+  if (result.data && typeof result.data === 'object' && 'data' in result.data) {
+    const wrappedData = result.data as { success: boolean; message: string; data: unknown };
+    if (wrappedData.success) {
+      return { ...result, data: wrappedData.data };
+    }
+  }
+
+  // Handle error responses from the server (when status code is 200 but success is false)
+  if (result.data && typeof result.data === 'object' && 'success' in result.data) {
+    const wrappedData = result.data as { success: boolean; message: string };
+    if (!wrappedData.success) {
+      return {
+        ...result,
+        error: {
+          status: 400,
+          data: { message: wrappedData.message },
+        },
+        data: undefined,
+      };
+    }
+  }
+
+  return result;
+};
+
+export const api = createApi({
+  baseQuery: unwrappingBaseQuery,
   reducerPath: 'api',
   tagTypes: [
     'Managers',
@@ -107,64 +136,60 @@ export const api = createApi({
     getAuthUser: build.query<User, void>({
       queryFn: async (_, _queryApi, _extraoptions, fetchWithBQ) => {
         try {
-          const session = await fetchAuthSession();
-          const { idToken } = session.tokens ?? {};
-          
+          // Get fresh token to avoid expiration issues
+          const token = await getFreshToken();
+          const userInfo = getCachedUserInfo();
+
           // No token means user is not authenticated
-          if (!idToken) {
+          if (!token || !userInfo) {
             return { error: 'Not authenticated' };
           }
-          
-          const user = await getCurrentUser();
-          const userRole = idToken?.payload['custom:role'] as string;
+
+          const { userId, role: userRole, email, name } = userInfo;
 
           console.log('[getAuthUser] Fetching user:', {
-            userId: user.userId,
-            username: user.username,
+            userId,
+            name,
             userRole,
           });
 
           // Validate userRole exists
           if (!userRole) {
-            console.error('[getAuthUser] No userRole found in token');
-            return { error: 'User role not found. Please sign out and sign in again.' };
+            console.error('[getAuthUser] No userRole found');
+            return { error: 'User role not found. Please complete role selection.' };
           }
 
           // Use case-insensitive comparison for role
           const normalizedRole = userRole.toLowerCase();
           const endpoint =
-            normalizedRole === 'manager'
-              ? `/managers/${user.userId}`
-              : `/tenants/${user.userId}`;
+            normalizedRole === 'manager' ? `/managers/${userId}` : `/tenants/${userId}`;
 
           console.log('[getAuthUser] Fetching from endpoint:', endpoint);
           let userDetailsResponse = await fetchWithBQ(endpoint);
 
           // if user doesn't exist, create new user
-          if (
-            userDetailsResponse.error &&
-            (userDetailsResponse.error as any).status === 404
-          ) {
+          if (userDetailsResponse.error && (userDetailsResponse.error as any).status === 404) {
             console.log('[getAuthUser] User not found in DB, creating new user...');
             userDetailsResponse = await createNewUserInDatabase(
-              user,
-              idToken,
+              { userId, username: name },
+              { payload: { email } },
               userRole,
               fetchWithBQ
             );
           } else if (userDetailsResponse.error) {
             // Handle other errors
             console.error('[getAuthUser] Error fetching user:', userDetailsResponse.error);
-            const errorMsg = (userDetailsResponse.error as any)?.data?.message || 
-                            (userDetailsResponse.error as any)?.error || 
-                            'Failed to fetch user';
+            const errorMsg =
+              (userDetailsResponse.error as any)?.data?.message ||
+              (userDetailsResponse.error as any)?.error ||
+              'Failed to fetch user';
             return { error: errorMsg };
           }
 
           console.log('[getAuthUser] User retrieved successfully:', userDetailsResponse.data);
           return {
             data: {
-              cognitoInfo: { ...user },
+              cognitoInfo: { userId },
               userInfo: userDetailsResponse.data as Tenant | Manager,
               userRole,
             },
@@ -203,7 +228,7 @@ export const api = createApi({
         return { url: 'properties', params };
       },
       providesTags: (result) =>
-        result
+        Array.isArray(result)
           ? [
               ...result.map(({ id }) => ({ type: 'Properties' as const, id })),
               { type: 'Properties', id: 'LIST' },
@@ -229,7 +254,10 @@ export const api = createApi({
     // tenant related endpoints
     getTenant: build.query<TenantWithRelations, string>({
       query: (cognitoId) => `tenants/${cognitoId}`,
-      providesTags: (result) => [{ type: 'Tenants', id: result?.id }],
+      providesTags: (result, error, cognitoId) => [
+        { type: 'Tenants', id: result?.id },
+        { type: 'Tenants', id: cognitoId },
+      ],
       async onQueryStarted(_, { queryFulfilled }) {
         await withToast(queryFulfilled, {
           error: 'Failed to load tenant profile.',
@@ -240,7 +268,7 @@ export const api = createApi({
     getCurrentResidences: build.query<PropertyWithRelations[], string>({
       query: (cognitoId) => `tenants/${cognitoId}/current-residences`,
       providesTags: (result) =>
-        result
+        Array.isArray(result)
           ? [
               ...result.map(({ id }) => ({ type: 'Properties' as const, id })),
               { type: 'Properties', id: 'LIST' },
@@ -272,15 +300,16 @@ export const api = createApi({
     }),
 
     addFavoriteProperty: build.mutation<
-      Tenant,
+      TenantWithRelations,
       { cognitoId: string; propertyId: number }
     >({
       query: ({ cognitoId, propertyId }) => ({
         url: `tenants/${cognitoId}/favorites/${propertyId}`,
         method: 'POST',
       }),
-      invalidatesTags: (result) => [
+      invalidatesTags: (result, error, { cognitoId }) => [
         { type: 'Tenants', id: result?.id },
+        { type: 'Tenants', id: cognitoId },
         { type: 'Properties', id: 'LIST' },
       ],
       async onQueryStarted(_, { queryFulfilled }) {
@@ -292,15 +321,16 @@ export const api = createApi({
     }),
 
     removeFavoriteProperty: build.mutation<
-      Tenant,
+      TenantWithRelations,
       { cognitoId: string; propertyId: number }
     >({
       query: ({ cognitoId, propertyId }) => ({
         url: `tenants/${cognitoId}/favorites/${propertyId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result) => [
+      invalidatesTags: (result, error, { cognitoId }) => [
         { type: 'Tenants', id: result?.id },
+        { type: 'Tenants', id: cognitoId },
         { type: 'Properties', id: 'LIST' },
       ],
       async onQueryStarted(_, { queryFulfilled }) {
@@ -315,7 +345,7 @@ export const api = createApi({
     getManagerProperties: build.query<PropertyWithRelations[], string>({
       query: (cognitoId) => `managers/${cognitoId}/properties`,
       providesTags: (result) =>
-        result
+        Array.isArray(result)
           ? [
               ...result.map(({ id }) => ({ type: 'Properties' as const, id })),
               { type: 'Properties', id: 'LIST' },
@@ -328,10 +358,7 @@ export const api = createApi({
       },
     }),
 
-    updateManagerSettings: build.mutation<
-      Manager,
-      { cognitoId: string } & Partial<Manager>
-    >({
+    updateManagerSettings: build.mutation<Manager, { cognitoId: string } & Partial<Manager>>({
       query: ({ cognitoId, ...updatedManager }) => ({
         url: `managers/${cognitoId}`,
         method: 'PUT',
@@ -365,7 +392,7 @@ export const api = createApi({
     }),
 
     // lease related enpoints
-    getLeases: build.query<LeaseWithRelations[], number>({
+    getLeases: build.query<LeaseWithRelations[], void>({
       query: () => 'leases',
       providesTags: ['Leases'],
       async onQueryStarted(_, { queryFulfilled }) {
@@ -453,34 +480,40 @@ export const api = createApi({
     }),
 
     // Get initial payment details for approved application
-    getInitialPaymentDetails: build.query<{
-      applicationId: number;
-      propertyId: number;
-      propertyName: string;
-      breakdown: {
-        securityDeposit: number;
-        firstMonthRent: number;
-        applicationFee: number;
-        total: number;
-      };
-      isPaid: boolean;
-      paymentId: number | null;
-    }, number>({
+    getInitialPaymentDetails: build.query<
+      {
+        applicationId: number;
+        propertyId: number;
+        propertyName: string;
+        breakdown: {
+          securityDeposit: number;
+          firstMonthRent: number;
+          applicationFee: number;
+          total: number;
+        };
+        isPaid: boolean;
+        paymentId: number | null;
+      },
+      number
+    >({
       query: (applicationId) => `applications/${applicationId}/initial-payment`,
       providesTags: ['Applications'],
     }),
 
     // Create initial payment intent
-    createInitialPaymentIntent: build.mutation<{
-      clientSecret: string;
-      paymentIntentId: string;
-      breakdown: {
-        securityDeposit: number;
-        firstMonthRent: number;
-        applicationFee: number;
-        total: number;
-      };
-    }, { applicationId: number }>({
+    createInitialPaymentIntent: build.mutation<
+      {
+        clientSecret: string;
+        paymentIntentId: string;
+        breakdown: {
+          securityDeposit: number;
+          firstMonthRent: number;
+          applicationFee: number;
+          total: number;
+        };
+      },
+      { applicationId: number }
+    >({
       query: (body) => ({
         url: 'payments/create-initial-intent',
         method: 'POST',
@@ -489,12 +522,15 @@ export const api = createApi({
     }),
 
     // Complete initial payment and create lease
-    completeInitialPayment: build.mutation<{
-      message: string;
-      application: ApplicationWithRelations;
-      lease: LeaseWithRelations;
-      payment: Payment;
-    }, { applicationId: number; stripePaymentId?: string; startDate?: string }>({
+    completeInitialPayment: build.mutation<
+      {
+        message: string;
+        application: ApplicationWithRelations;
+        lease: LeaseWithRelations;
+        payment: Payment;
+      },
+      { applicationId: number; stripePaymentId?: string; startDate?: string }
+    >({
       query: ({ applicationId, ...body }) => ({
         url: `applications/${applicationId}/complete-payment`,
         method: 'POST',
@@ -547,7 +583,7 @@ export const api = createApi({
     getPropertyReviews: build.query<Review[], number>({
       query: (propertyId) => `reviews/property/${propertyId}`,
       providesTags: (result) =>
-        result
+        Array.isArray(result)
           ? [
               ...result.map(({ id }) => ({ type: 'Reviews' as const, id })),
               { type: 'Reviews', id: 'LIST' },
@@ -555,7 +591,10 @@ export const api = createApi({
           : [{ type: 'Reviews', id: 'LIST' }],
     }),
 
-    createReview: build.mutation<Review, { rating: number; comment?: string; propertyId: number; tenantCognitoId: string }>({
+    createReview: build.mutation<
+      Review,
+      { rating: number; comment?: string; propertyId: number; tenantCognitoId: string }
+    >({
       query: (body) => ({
         url: 'reviews',
         method: 'POST',
@@ -615,7 +654,17 @@ export const api = createApi({
       providesTags: ['Maintenance'],
     }),
 
-    createMaintenanceRequest: build.mutation<MaintenanceRequest, { title: string; description: string; priority?: string; propertyId: number; tenantCognitoId: string; attachments?: string[] }>({
+    createMaintenanceRequest: build.mutation<
+      MaintenanceRequest,
+      {
+        title: string;
+        description: string;
+        priority?: string;
+        propertyId: number;
+        tenantCognitoId: string;
+        attachments?: string[];
+      }
+    >({
       query: (body) => ({
         url: 'maintenance',
         method: 'POST',
@@ -630,7 +679,10 @@ export const api = createApi({
       },
     }),
 
-    updateMaintenanceRequest: build.mutation<MaintenanceRequest, { id: number; status?: string; resolution?: string }>({
+    updateMaintenanceRequest: build.mutation<
+      MaintenanceRequest,
+      { id: number; status?: string; resolution?: string }
+    >({
       query: ({ id, ...body }) => ({
         url: `maintenance/${id}`,
         method: 'PUT',
@@ -686,7 +738,10 @@ export const api = createApi({
       providesTags: ['Messages'],
     }),
 
-    sendMessage: build.mutation<Message, { content: string; propertyId?: number; receiverCognitoId: string; receiverType: string }>({
+    sendMessage: build.mutation<
+      Message,
+      { content: string; propertyId?: number; receiverCognitoId: string; receiverType: string }
+    >({
       query: (body) => ({
         url: 'messages',
         method: 'POST',
@@ -696,7 +751,10 @@ export const api = createApi({
     }),
 
     // Payment endpoints
-    createPaymentIntent: build.mutation<{ clientSecret: string; paymentIntentId: string }, { leaseId: number; amount: number; paymentType?: string }>({
+    createPaymentIntent: build.mutation<
+      { clientSecret: string; paymentIntentId: string },
+      { leaseId: number; amount: number; paymentType?: string }
+    >({
       query: (body) => ({
         url: 'payments/create-intent',
         method: 'POST',
@@ -709,7 +767,10 @@ export const api = createApi({
       providesTags: ['Payments'],
     }),
 
-    getManagerPayments: build.query<Payment[], { cognitoId: string; status?: string; propertyId?: number }>({
+    getManagerPayments: build.query<
+      Payment[],
+      { cognitoId: string; status?: string; propertyId?: number }
+    >({
       query: ({ cognitoId, status, propertyId }) => {
         const params = new URLSearchParams();
         if (status) params.append('status', status);
@@ -719,7 +780,10 @@ export const api = createApi({
       providesTags: ['Payments'],
     }),
 
-    createManualPayment: build.mutation<Payment, { leaseId: number; amountPaid: number; paymentDate: string; notes?: string }>({
+    createManualPayment: build.mutation<
+      Payment,
+      { leaseId: number; amountPaid: number; paymentDate: string; notes?: string }
+    >({
       query: (body) => ({
         url: 'payments/manual',
         method: 'POST',

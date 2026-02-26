@@ -2,18 +2,17 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import
-  {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-  } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { NAVBAR_HEIGHT } from '@/lib/constants';
 import { useGetAuthUserQuery } from '@/state/api';
-import { signOut } from 'aws-amplify/auth';
+import { useClerk } from '@clerk/nextjs';
 import { Plus, Search } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -24,9 +23,9 @@ const Navbar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { data: authUser } = useGetAuthUserQuery();
+  const { signOut } = useClerk();
 
-  const isDashboardPage =
-    pathname.includes('/managers') || pathname.includes('/tenants');
+  const isDashboardPage = pathname.includes('/managers') || pathname.includes('/tenants');
 
   const handleSignOut = async () => {
     await signOut();
@@ -35,41 +34,35 @@ const Navbar = () => {
 
   return (
     <div
-      className='fixed top-0 left-0 w-full z-50 shadow-xl'
+      className="fixed top-0 left-0 w-full z-50 shadow-xl"
       style={{ height: `${NAVBAR_HEIGHT}px` }}
     >
-      <div className='flex justify-between items-center w-full py-3 px-8 bg-primary-700 text-white'>
-        <div className='flex items-center gap-4 md:gap-6'>
+      <div className="flex justify-between items-center w-full py-3 px-8 bg-primary-700 text-white">
+        <div className="flex items-center gap-4 md:gap-6">
           {isDashboardPage && (
-            <div className='md:hidden'>
+            <div className="md:hidden">
               <SidebarTrigger />
             </div>
           )}
-          <Link
-            href='/'
-            className='cursor-pointer hover:!text-primary-300'
-            scroll={false}
-          >
-            <div className='flex items-center gap-3'>
+          <Link href="/" className="cursor-pointer hover:!text-primary-300" scroll={false}>
+            <div className="flex items-center gap-3">
               <Image
-                src='/logo.svg'
+                src="/logo.svg"
                 width={24}
                 height={24}
-                className='w-6 h-6'
-                alt='Rentiful Logo'
+                className="w-6 h-6"
+                alt="Rentiful Logo"
               />
-              <div className='text-xl font-bold'>
+              <div className="text-xl font-bold">
                 RENT
-                <span className='text-secondary-500 font-light hover:!text-primary-300'>
-                  IFUL
-                </span>
+                <span className="text-secondary-500 font-light hover:!text-primary-300">IFUL</span>
               </div>
             </div>
           </Link>
           {isDashboardPage && authUser && (
             <Button
-              variant='secondary'
-              className='md:ml-4 bg-primary-50 text-primary-700 hover:bg-secondary-500 hover:text-primary-50'
+              variant="secondary"
+              className="md:ml-4 bg-primary-50 text-primary-700 hover:bg-secondary-500 hover:text-primary-50"
               onClick={() =>
                 router.push(
                   authUser.userRole?.toLowerCase() === 'manager'
@@ -80,47 +73,43 @@ const Navbar = () => {
             >
               {authUser.userRole?.toLowerCase() === 'manager' ? (
                 <>
-                  <Plus className='h-4 w-4' />
-                  <span className='hidden md:block ml-2'>Add New Property</span>
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden md:block ml-2">Add New Property</span>
                 </>
               ) : (
                 <>
-                  <Search className='h-4 w-4' />
-                  <span className='hidden md:block ml-2'>
-                    Search Properties
-                  </span>
+                  <Search className="h-4 w-4" />
+                  <span className="hidden md:block ml-2">Search Properties</span>
                 </>
               )}
             </Button>
           )}
         </div>
         {!isDashboardPage && (
-          <p className='text-primary-200 hidden md:block'>
+          <p className="text-primary-200 hidden md:block">
             Discover your perfect rental apartment with our advanced search
           </p>
         )}
-        <div className='flex items-center gap-5'>
+        <div className="flex items-center gap-5">
           {authUser ? (
             <>
-              <div className='hidden md:block'>
+              <div className="hidden md:block">
                 <NotificationDropdown />
               </div>
 
               <DropdownMenu>
-                <DropdownMenuTrigger className='flex items-center gap-2 focus:outline-hidden'>
+                <DropdownMenuTrigger className="flex items-center gap-2 focus:outline-hidden">
                   <Avatar>
                     <AvatarImage src={authUser.userInfo?.image} />
-                    <AvatarFallback className='bg-primary-600'>
+                    <AvatarFallback className="bg-primary-600">
                       {authUser.userRole?.[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <p className='text-primary-200 hidden md:block'>
-                    {authUser.userInfo?.name}
-                  </p>
+                  <p className="text-primary-200 hidden md:block">{authUser.userInfo?.name}</p>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className='bg-white text-primary-700'>
+                <DropdownMenuContent className="bg-white text-primary-700">
                   <DropdownMenuItem
-                    className='cursor-pointer hover:!bg-primary-700 hover:!text-primary-100 font-bold'
+                    className="cursor-pointer hover:!bg-primary-700 hover:!text-primary-100 font-bold"
                     onClick={() =>
                       router.push(
                         authUser.userRole?.toLowerCase() === 'manager'
@@ -132,20 +121,19 @@ const Navbar = () => {
                   >
                     Go to Dashboard
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator className='bg-primary-200' />
+                  <DropdownMenuSeparator className="bg-primary-200" />
                   <DropdownMenuItem
-                    className='cursor-pointer hover:!bg-primary-700 hover:!text-primary-100'
+                    className="cursor-pointer hover:!bg-primary-700 hover:!text-primary-100"
                     onClick={() =>
-                      router.push(
-                        `/${authUser.userRole?.toLowerCase()}s/settings`,
-                        { scroll: false }
-                      )
+                      router.push(`/${authUser.userRole?.toLowerCase()}s/settings`, {
+                        scroll: false,
+                      })
                     }
                   >
                     Settings
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className='cursor-pointer hover:!bg-primary-700 hover:!text-primary-100'
+                    className="cursor-pointer hover:!bg-primary-700 hover:!text-primary-100"
                     onClick={handleSignOut}
                   >
                     Sign out
@@ -155,18 +143,18 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              <Link href='/signin'>
+              <Link href="/signin">
                 <Button
-                  variant='outline'
-                  className='text-white border-white bg-transparent hover:bg-white hover:text-primary-700 rounded-lg'
+                  variant="outline"
+                  className="text-white border-white bg-transparent hover:bg-white hover:text-primary-700 rounded-lg"
                 >
                   Sign In
                 </Button>
               </Link>
-              <Link href='/signup'>
+              <Link href="/signup">
                 <Button
-                  variant='secondary'
-                  className='text-white bg-secondary-600 hover:bg-white hover:text-primary-700 rounded-lg'
+                  variant="secondary"
+                  className="text-white bg-secondary-600 hover:bg-white hover:text-primary-700 rounded-lg"
                 >
                   Sign Up
                 </Button>

@@ -14,9 +14,7 @@ const Card = ({
   onDelete,
 }: CardProps) => {
   const getImageUrl = () =>
-    property?.photoUrls?.length > 0
-      ? (property.photoUrls?.[0] as string)
-      : 'https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/placeholder.jpg';
+    property?.photoUrls?.length > 0 ? (property.photoUrls?.[0] as string) : '/placeholder.jpg';
 
   const [imgSrc, setImgSrc] = useState<string>(getImageUrl());
 
@@ -33,67 +31,65 @@ const Card = ({
   };
 
   return (
-    <div className='bg-white rounded-xl overflow-hidden shadow-lg w-full mb-5'>
-      <div className='relative'>
-        <div className='w-full h-48 relative'>
+    <div className="bg-white rounded-xl overflow-hidden shadow-lg w-full mb-5">
+      <div className="relative">
+        <div className="w-full h-48 relative">
           <Image
             src={imgSrc}
-            className='object-cover'
+            className="object-cover"
             alt={property.name}
             fill
-            sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             onError={handleImageError}
           />
         </div>
-        <div className='absolute bottom-4 left-4 flex gap-2'>
+        <div className="absolute bottom-4 left-4 flex gap-2">
           {property.isPetsAllowed && (
-            <span className='bg-white/80 text-black text-xs font-semibold px-2 py-1 rounded-full'>
+            <span className="bg-white/80 text-black text-xs font-semibold px-2 py-1 rounded-full">
               Pets Allowed
             </span>
           )}
           {property.isParkingIncluded && (
-            <span className='bg-white/80 text-black text-xs font-semibold px-2 py-1 rounded-full'>
+            <span className="bg-white/80 text-black text-xs font-semibold px-2 py-1 rounded-full">
               Parking Included
             </span>
           )}
         </div>
         {showFavoriteButton && (
           <button
-            className='absolute bottom-4 right-4 bg-white hover:bg-white/90 rounded-full p-2 cursor-pointer'
+            className="absolute bottom-4 right-4 bg-white hover:bg-white/90 rounded-full p-2 cursor-pointer"
             onClick={onFavoriteToggle}
           >
             <Heart
-              className={`w-5 h-5 ${
-                isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-600'
-              }`}
+              className={`w-5 h-5 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-600'}`}
             />
           </button>
         )}
         {showEditDelete && (
-          <div className='absolute top-4 right-4 flex gap-2'>
+          <div className="absolute top-4 right-4 flex gap-2">
             <button
-              className='bg-white hover:bg-blue-50 rounded-full p-2 cursor-pointer shadow-md'
+              className="bg-white hover:bg-blue-50 rounded-full p-2 cursor-pointer shadow-md"
               onClick={onEdit}
-              title='Edit property'
+              title="Edit property"
             >
-              <Pencil className='w-4 h-4 text-blue-600' />
+              <Pencil className="w-4 h-4 text-blue-600" />
             </button>
             <button
-              className='bg-white hover:bg-red-50 rounded-full p-2 cursor-pointer shadow-md'
+              className="bg-white hover:bg-red-50 rounded-full p-2 cursor-pointer shadow-md"
               onClick={onDelete}
-              title='Delete property'
+              title="Delete property"
             >
-              <Trash2 className='w-4 h-4 text-red-600' />
+              <Trash2 className="w-4 h-4 text-red-600" />
             </button>
           </div>
         )}
       </div>
-      <div className='p-4'>
-        <h2 className='text-xl font-bold mb-1'>
+      <div className="p-4">
+        <h2 className="text-xl font-bold mb-1">
           {propertyLink ? (
             <Link
               href={propertyLink}
-              className='hover:underline hover:text-blue-600'
+              className="hover:underline hover:text-blue-600"
               scroll={false}
             >
               {property.name}
@@ -102,36 +98,32 @@ const Card = ({
             property.name
           )}
         </h2>
-        <p className='text-gray-600 mb-2'>
+        <p className="text-gray-600 mb-2">
           {property?.location?.address}, {property?.location?.city}
         </p>
-        <div className='flex justify-between items-center'>
-          <div className='flex items-center mb-2'>
-            <Star className='w-4 h-4 text-yellow-400 mr-1' />
-            <span className='font-semibold'>
-              {property.averageRating?.toFixed(1) || '0.0'}
-            </span>
-            <span className='text-gray-600 ml-1'>
-              ({property.numberOfReviews} Reviews)
-            </span>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center mb-2">
+            <Star className="w-4 h-4 text-yellow-400 mr-1" />
+            <span className="font-semibold">{property.averageRating?.toFixed(1) || '0.0'}</span>
+            <span className="text-gray-600 ml-1">({property.numberOfReviews} Reviews)</span>
           </div>
-          <p className='text-lg font-bold mb-3'>
+          <p className="text-lg font-bold mb-3">
             ${property.pricePerMonth.toFixed(0)}{' '}
-            <span className='text-gray-600 text-base font-normal'> /month</span>
+            <span className="text-gray-600 text-base font-normal"> /month</span>
           </p>
         </div>
         <hr />
-        <div className='flex justify-between items-center gap-4 text-gray-600 mt-5'>
-          <span className='flex items-center'>
-            <Bed className='w-5 h-5 mr-2' />
+        <div className="flex justify-between items-center gap-4 text-gray-600 mt-5">
+          <span className="flex items-center">
+            <Bed className="w-5 h-5 mr-2" />
             {property.beds} Bed
           </span>
-          <span className='flex items-center'>
-            <Bath className='w-5 h-5 mr-2' />
+          <span className="flex items-center">
+            <Bath className="w-5 h-5 mr-2" />
             {property.baths} Bath
           </span>
-          <span className='flex items-center'>
-            <House className='w-5 h-5 mr-2' />
+          <span className="flex items-center">
+            <House className="w-5 h-5 mr-2" />
             {property.squareFeet} sq ft
           </span>
         </div>

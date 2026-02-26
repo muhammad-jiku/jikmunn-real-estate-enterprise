@@ -7,8 +7,8 @@
     "securityDeposit": 1500.0,
     "applicationFee": 50.0,
     "photoUrls": [
-      "https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/apartment1.jpg",
-      "https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/apartment2.jpg"
+      "/singlelisting-2.jpg",
+      "/singlelisting-3.jpg"
     ],
     "amenities": ["AirConditioning", "WasherDryer", "Parking"],
     "highlights": ["HighSpeedInternetAccess", "CloseToTransit"],
@@ -22,7 +22,7 @@
     "averageRating": 0,
     "numberOfReviews": 0,
     "locationId": 1,
-    "managerCognitoId": "us-east-01-7901-7096-a14f-11a34258b2b3"
+    "managerCognitoId": "user_3ACaMNzMToawaq2AK87VCb0tYYh"
   },
   {
     "id": 2,
@@ -32,8 +32,8 @@
     "securityDeposit": 2000.0,
     "applicationFee": 75.0,
     "photoUrls": [
-      "https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/beachhouse1.jpg",
-      "https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/beachhouse2.jpg"
+      "/singlelisting-3.jpg",
+      "/singlelisting-2.jpg"
     ],
     "amenities": ["AirConditioning", "WasherDryer", "Parking", "Pool"],
     "highlights": ["GreatView", "CloseToTransit"],
@@ -47,7 +47,7 @@
     "averageRating": 0,
     "numberOfReviews": 0,
     "locationId": 2,
-    "managerCognitoId": "us-east-01-7901-7096-a14f-11a34258b2b3"
+    "managerCognitoId": "user_3ACaMNzMToawaq2AK87VCb0tYYh"
   },
   {
     "id": 3,
@@ -57,8 +57,8 @@
     "securityDeposit": 2200.0,
     "applicationFee": 60.0,
     "photoUrls": [
-      "https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/loft1.jpg",
-      "https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/loft2.jpg"
+      "/singlelisting-2.jpg",
+      "/placeholder.jpg"
     ],
     "amenities": ["AirConditioning", "WasherDryer", "Gym"],
     "highlights": ["HighSpeedInternetAccess", "CloseToTransit", "RecentlyRenovated"],
@@ -72,7 +72,7 @@
     "averageRating": 0,
     "numberOfReviews": 0,
     "locationId": 3,
-    "managerCognitoId": "us-east-01-7901-7096-a14f-11a34258b2b3"
+    "managerCognitoId": "user_3ACaMNzMToawaq2AK87VCb0tYYh"
   },
   {
     "id": 4,
@@ -82,8 +82,8 @@
     "securityDeposit": 2500.0,
     "applicationFee": 80.0,
     "photoUrls": [
-      "https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/familyhome1.jpg",
-      "https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/familyhome2.jpg"
+      "/singlelisting-3.jpg",
+      "/placeholder.jpg"
     ],
     "amenities": ["AirConditioning", "WasherDryer", "Parking", "Dishwasher"],
     "highlights": ["QuietNeighborhood"],
@@ -97,7 +97,7 @@
     "averageRating": 0,
     "numberOfReviews": 0,
     "locationId": 4,
-    "managerCognitoId": "us-east-01-1201-70c7-466e-5aa02206119f"
+    "managerCognitoId": "user_3ACb4HwwnqvtR0v9IYoYjlre3UP"
   },
   {
     "id": 5,
@@ -107,8 +107,8 @@
     "securityDeposit": 4500.0,
     "applicationFee": 100.0,
     "photoUrls": [
-      "https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/penthouse1.jpg",
-      "https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/penthouse2.jpg"
+      "/placeholder.jpg",
+      "/singlelisting-2.jpg"
     ],
     "amenities": ["AirConditioning", "WasherDryer", "Gym", "Pool", "Parking"],
     "highlights": ["GreatView", "HighSpeedInternetAccess", "RecentlyRenovated"],
@@ -122,7 +122,7 @@
     "averageRating": 0,
     "numberOfReviews": 0,
     "locationId": 5,
-    "managerCognitoId": "us-east-01-1201-70c7-466e-5aa02206119f"
+    "managerCognitoId": "user_3ACb4HwwnqvtR0v9IYoYjlre3UP"
   },
   {
     "id": 6,
@@ -132,8 +132,8 @@
     "securityDeposit": 5000.0,
     "applicationFee": 120.0,
     "photoUrls": [
-      "https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/oceanfront1.jpg",
-      "https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/oceanfront2.jpg"
+      "/placeholder.jpg",
+      "/singlelisting-3.jpg"
     ],
     "amenities": ["AirConditioning", "WasherDryer", "Pool", "Parking", "HardwoodFloors"],
     "highlights": ["GreatView", "QuietNeighborhood"],
@@ -147,6 +147,6 @@
     "averageRating": 0,
     "numberOfReviews": 0,
     "locationId": 6,
-    "managerCognitoId": "us-east-01-1201-70c7-466e-5aa02206119f"
+    "managerCognitoId": "user_3ACb4HwwnqvtR0v9IYoYjlre3UP"
   }
 ]

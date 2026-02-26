@@ -1,27 +1,17 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import {
-    useCompleteInitialPaymentMutation,
-    useCreateInitialPaymentIntentMutation,
-    useCreatePaymentIntentMutation,
-    useGetApplicationsQuery,
-    useGetAuthUserQuery,
-    useGetLeasesQuery,
-    useGetPropertyQuery,
+  useCompleteInitialPaymentMutation,
+  useCreateInitialPaymentIntentMutation,
+  useCreatePaymentIntentMutation,
+  useGetApplicationsQuery,
+  useGetAuthUserQuery,
+  useGetLeasesQuery,
+  useGetPropertyQuery,
 } from '@/state/api';
-import {
-    Elements,
-    PaymentElement,
-    useElements,
-    useStripe,
-} from '@stripe/react-stripe-js';
+import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { CheckCircle, Clock, CreditCard, DollarSign, FileText } from 'lucide-react';
 import { useState } from 'react';
@@ -124,14 +114,14 @@ export const ApprovedTenantPayment = ({ propertyId }: ApprovedTenantPaymentProps
     { skip: !cognitoId || userType !== 'tenant' }
   );
 
-  // Get leases for the tenant
-  const { data: leases, refetch: refetchLeases } = useGetLeasesQuery(
-    parseInt(cognitoId || '0'),
-    { skip: !cognitoId || userType !== 'tenant' }
-  );
+  // Get leases for the tenant (server filters by authenticated user)
+  const { data: leases, refetch: refetchLeases } = useGetLeasesQuery(undefined, {
+    skip: !cognitoId || userType !== 'tenant',
+  });
 
   const [createPaymentIntent, { isLoading: isCreatingIntent }] = useCreatePaymentIntentMutation();
-  const [createInitialPaymentIntent, { isLoading: isCreatingInitialIntent }] = useCreateInitialPaymentIntentMutation();
+  const [createInitialPaymentIntent, { isLoading: isCreatingInitialIntent }] =
+    useCreateInitialPaymentIntentMutation();
   const [completeInitialPayment] = useCompleteInitialPaymentMutation();
 
   // Check for applications awaiting payment (manager approved, waiting for initial payment)
@@ -202,15 +192,17 @@ export const ApprovedTenantPayment = ({ propertyId }: ApprovedTenantPaymentProps
           applicationId: currentApplicationId,
           stripePaymentId: paymentIntentId,
         }).unwrap();
-        
+
         // Refetch data to update the UI
         refetchApplications();
         refetchLeases();
       } catch (_error) {
-        toast.error('Payment was successful but there was an error finalizing the lease. Please contact support.');
+        toast.error(
+          'Payment was successful but there was an error finalizing the lease. Please contact support.'
+        );
       }
     }
-    
+
     setIsPaymentModalOpen(false);
     setClientSecret(null);
     setPaymentBreakdown(null);
@@ -241,21 +233,32 @@ export const ApprovedTenantPayment = ({ propertyId }: ApprovedTenantPaymentProps
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600">Security Deposit</span>
-                <span className="font-medium">${property?.securityDeposit?.toLocaleString() || '0'}</span>
+                <span className="font-medium">
+                  ${property?.securityDeposit?.toLocaleString() || '0'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">First Month&apos;s Rent</span>
-                <span className="font-medium">${property?.pricePerMonth?.toLocaleString() || '0'}</span>
+                <span className="font-medium">
+                  ${property?.pricePerMonth?.toLocaleString() || '0'}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Application Fee</span>
-                <span className="font-medium">${property?.applicationFee?.toLocaleString() || '0'}</span>
+                <span className="font-medium">
+                  ${property?.applicationFee?.toLocaleString() || '0'}
+                </span>
               </div>
               <hr className="my-2" />
               <div className="flex justify-between text-base">
                 <span className="font-semibold text-gray-800">Total Due</span>
                 <span className="font-bold text-primary-800">
-                  ${((property?.securityDeposit || 0) + (property?.pricePerMonth || 0) + (property?.applicationFee || 0)).toLocaleString()}
+                  $
+                  {(
+                    (property?.securityDeposit || 0) +
+                    (property?.pricePerMonth || 0) +
+                    (property?.applicationFee || 0)
+                  ).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -269,7 +272,7 @@ export const ApprovedTenantPayment = ({ propertyId }: ApprovedTenantPaymentProps
             <CreditCard size={18} />
             {isCreatingInitialIntent ? 'Processing...' : 'Pay & Start Lease'}
           </Button>
-          
+
           <p className="text-xs text-amber-600 mt-3 text-center">
             Your lease will be activated immediately after payment
           </p>
@@ -357,7 +360,8 @@ export const ApprovedTenantPayment = ({ propertyId }: ApprovedTenantPaymentProps
                 </span>
               </div>
               <div className="text-sm text-gray-500">
-                Lease Period: {new Date(currentLease.startDate).toLocaleDateString()} - {new Date(currentLease.endDate).toLocaleDateString()}
+                Lease Period: {new Date(currentLease.startDate).toLocaleDateString()} -{' '}
+                {new Date(currentLease.endDate).toLocaleDateString()}
               </div>
               <div className="text-xs text-gray-400 mt-1">
                 Due on the 1st of each month (5-day grace period)
@@ -377,7 +381,8 @@ export const ApprovedTenantPayment = ({ propertyId }: ApprovedTenantPaymentProps
           <div className="bg-white rounded-xl p-4 border border-green-100 text-center">
             <DollarSign className="mx-auto text-gray-400 mb-2" size={24} />
             <p className="text-gray-600 text-sm">
-              Your lease is being prepared. You will be able to make payments once the lease is active.
+              Your lease is being prepared. You will be able to make payments once the lease is
+              active.
             </p>
           </div>
         )}

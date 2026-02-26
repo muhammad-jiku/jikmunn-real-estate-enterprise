@@ -67,16 +67,20 @@ const createInitialPaymentIntent = asyncHandler(
       applicationFee: String(applicationFee),
     });
 
-    res.status(200).json({
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
-      breakdown: {
-        securityDeposit,
-        firstMonthRent,
-        applicationFee,
-        total: totalAmount,
+    sendSuccess(
+      res,
+      {
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+        breakdown: {
+          securityDeposit,
+          firstMonthRent,
+          applicationFee,
+          total: totalAmount,
+        },
       },
-    });
+      'Payment intent created successfully'
+    );
   }
 );
 
@@ -110,10 +114,14 @@ const createIntent = asyncHandler(async (req: Request, res: Response): Promise<v
     paymentType: paymentType || 'rent',
   });
 
-  res.status(200).json({
-    clientSecret: paymentIntent.client_secret,
-    paymentIntentId: paymentIntent.id,
-  });
+  sendSuccess(
+    res,
+    {
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+    },
+    'Payment intent created successfully'
+  );
 });
 
 // Handle Stripe webhook

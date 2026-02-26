@@ -1,14 +1,16 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import {
-    Review,
-    useCreateReviewMutation,
-    useDeleteReviewMutation,
-    useGetAuthUserQuery,
-    useGetPropertyReviewsQuery,
+  Review,
+  useCreateReviewMutation,
+  useDeleteReviewMutation,
+  useGetAuthUserQuery,
+  useGetPropertyReviewsQuery,
 } from '@/state/api';
 import { Star, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
@@ -28,22 +30,25 @@ export function PropertyReviews({ propertyId }: PropertyReviewsProps) {
   const [hoveredRating, setHoveredRating] = useState(0);
 
   const isTenant = authUser?.userRole === 'tenant';
-  const userHasReviewed = reviews?.some(
-    (r) => r.tenantCognitoId === authUser?.cognitoInfo?.userId
-  );
+  const userHasReviewed = reviews?.some((r) => r.tenantCognitoId === authUser?.cognitoInfo?.userId);
 
   const handleSubmitReview = async () => {
     if (!authUser?.cognitoInfo?.userId) return;
 
-    await createReview({
-      rating,
-      comment: comment || undefined,
-      propertyId,
-      tenantCognitoId: authUser.cognitoInfo.userId,
-    });
+    try {
+      await createReview({
+        rating,
+        comment: comment || undefined,
+        propertyId,
+        tenantCognitoId: authUser.cognitoInfo.userId,
+      }).unwrap();
 
-    setRating(5);
-    setComment('');
+      setRating(5);
+      setComment('');
+      toast.success('Review submitted successfully');
+    } catch (error) {
+      toast.error('Failed to submit review');
+    }
   };
 
   const handleDeleteReview = async (reviewId: number) => {
@@ -111,9 +116,7 @@ export function PropertyReviews({ propertyId }: PropertyReviewsProps) {
             <div className="flex justify-between items-start">
               <div className="flex gap-3">
                 <Avatar>
-                  <AvatarFallback>
-                    {review.tenant?.name?.charAt(0) || 'U'}
-                  </AvatarFallback>
+                  <AvatarFallback>{review.tenant?.name?.charAt(0) || 'U'}</AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="font-medium">{review.tenant?.name || 'Anonymous'}</p>
@@ -145,9 +148,7 @@ export function PropertyReviews({ propertyId }: PropertyReviewsProps) {
                 )}
               </div>
             </div>
-            {review.comment && (
-              <p className="mt-3 text-gray-700">{review.comment}</p>
-            )}
+            {review.comment && <p className="mt-3 text-gray-700">{review.comment}</p>}
           </div>
         ))}
 

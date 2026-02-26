@@ -1,7 +1,12 @@
-import { AuthUser } from 'aws-amplify/auth';
 import { MotionProps as OriginalMotionProps } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
 import { Application, Lease, Manager, Payment, Property, Tenant } from './prismaTypes';
+
+// Clerk user info type (replaces AWS Amplify AuthUser)
+interface ClerkUserInfo {
+  userId: string;
+  username?: string;
+}
 
 declare module 'framer-motion' {
   interface MotionProps extends OriginalMotionProps {
@@ -39,6 +44,7 @@ declare global {
   // Extended Tenant with relations
   interface TenantWithRelations extends Tenant {
     favorites?: Property[];
+    favoritePropertyIds?: number[];
     image?: string;
     photoUrl?: string;
   }
@@ -166,9 +172,9 @@ declare global {
   }
 
   interface User {
-    cognitoInfo: AuthUser;
+    cognitoInfo: ClerkUserInfo;
     userInfo: UserInfo;
-    userRole: JsonObject | JsonPrimitive | JsonArray;
+    userRole: string;
   }
 }
 

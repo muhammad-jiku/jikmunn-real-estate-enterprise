@@ -122,8 +122,9 @@ const getConversations = asyncHandler(async (req: Request, res: Response): Promi
     }
   });
 
-  // Response DTO - removes cognitoId from response
+  // Response DTO - includes partnerId for conversation selection
   const conversationsDTO = Array.from(conversationsMap.values()).map((conv) => ({
+    partnerId: conv.partnerId,
     partnerName: conv.partnerName,
     partnerType: conv.partnerType,
     lastMessage: conv.lastMessage,
@@ -198,11 +199,12 @@ const getMessages = asyncHandler(async (req: Request, res: Response): Promise<vo
     });
   }
 
-  // Transform messages - already sanitized to not expose cognitoIds directly
+  // Transform messages - include senderCognitoId so client can identify own messages
   const transformedMessages = messages.map((msg: MessageWithRelations) => ({
     id: msg.id,
     content: msg.content,
     propertyId: msg.propertyId,
+    senderCognitoId: msg.senderTenantCognitoId || msg.senderManagerCognitoId || '',
     senderName: msg.senderTenant?.name || msg.senderManager?.name || '',
     senderType: msg.senderTenantCognitoId ? 'tenant' : 'manager',
     createdAt: msg.createdAt.toISOString(),
@@ -267,12 +269,14 @@ const sendMessage = asyncHandler(async (req: Request, res: Response): Promise<vo
   // Notify receiver (creates notification and also sends via Pusher)
   await notifyNewMessage(receiverCognitoId, receiverType, senderName, content, message.id);
 
-  // Response DTO - don't expose cognitoIds
+  // Response DTO - include senderCognitoId so client can identify own messages
   const messageDTO = {
     id: message.id,
     content: message.content,
     propertyId: message.propertyId,
+    senderCognitoId: userId,
     senderName: message.senderTenant?.name || message.senderManager?.name || '',
+    senderType: userRole,
     createdAt: message.createdAt.toISOString(),
     property: message.property ? { id: message.property.id, name: message.property.name } : null,
   };

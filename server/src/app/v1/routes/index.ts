@@ -9,6 +9,7 @@ import { PaymentRoutes } from '../modules/payment/payment.routes';
 import { PropertyRoutes } from '../modules/property/property.routes';
 import { ReviewRoutes } from '../modules/review/review.routes';
 import { TenantRoutes } from '../modules/tenant/tenant.routes';
+import { WebhookRoutes } from '../modules/webhook/webhook.routes';
 
 const routes = express.Router();
 
@@ -53,6 +54,10 @@ const moduleRoutes = [
   {
     path: '/payments',
     route: PaymentRoutes,
+  },
+  {
+    path: '/webhooks',
+    route: WebhookRoutes,
   },
 ];
 

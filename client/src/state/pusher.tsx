@@ -52,8 +52,9 @@ export const PusherProvider = ({ children }: PusherProviderProps) => {
       cluster: pusherCluster,
     });
 
-    // Subscribe to user's private channel
-    const channelName = `private-user-${userId}`;
+    // Subscribe to user's channel (using public channel to avoid auth endpoint requirement)
+    // For private channel auth, a server endpoint would be needed at /pusher/auth
+    const channelName = `user-${userId}`;
     const userChannel = pusherClient.subscribe(channelName);
 
     return { pusher: pusherClient, channel: userChannel };

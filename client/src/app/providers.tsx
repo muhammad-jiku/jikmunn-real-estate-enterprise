@@ -2,18 +2,18 @@
 
 import { PusherProvider } from '@/state/pusher';
 import StoreProvider from '@/state/redux';
-import { Authenticator } from '@aws-amplify/ui-react';
+import { ClerkProvider } from '@clerk/nextjs';
 import Auth from './(auth)/authProvider';
 
 const Providers = ({ children }: { children: React.ReactNode }) => {
   return (
-    <StoreProvider>
-      <Authenticator.Provider>
+    <ClerkProvider>
+      <StoreProvider>
         <Auth>
           <PusherProvider>{children}</PusherProvider>
         </Auth>
-      </Authenticator.Provider>
-    </StoreProvider>
+      </StoreProvider>
+    </ClerkProvider>
   );
 };
 

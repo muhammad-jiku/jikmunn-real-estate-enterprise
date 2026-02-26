@@ -2,7 +2,11 @@
 
 import { SignIn } from '@clerk/nextjs';
 
-const SignInPage = () => {
+/**
+ * Catch-all verification route for Clerk
+ * Handles email verification, SSO callbacks, etc.
+ */
+const VerifyPage = () => {
   return (
     <div className="flex h-screen w-full items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
       <SignIn
@@ -25,4 +29,4 @@ const SignInPage = () => {
   );
 };
 
-export default SignInPage;
+export default VerifyPage;

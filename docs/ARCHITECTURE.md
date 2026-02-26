@@ -3,28 +3,31 @@
 ## Tech Stack
 
 ### Frontend (Client)
+
 - **Framework:** Next.js 16.x
 - **UI:** TailwindCSS 4.x, shadcn/ui components
 - **State:** Redux Toolkit + RTK Query
 - **Forms:** React Hook Form + Zod
 - **Maps:** Mapbox GL
-- **Auth:** AWS Cognito (via Amplify)
+- **Auth:** Clerk
 
 ### Backend (Server)
+
 - **Framework:** Express.js 5.x
 - **ORM:** Prisma 7.x
 - **Database:** Supabase PostgreSQL + PostGIS
 - **Storage:** Cloudinary (images)
-- **Auth:** AWS Cognito JWT verification
+- **Auth:** Clerk JWT verification
 - **Payments:** Stripe
 - **Real-time:** Socket.io (optional)
 - **Email:** AWS SES / Resend
 
 ### Infrastructure
+
 - **Hosting:** Vercel (both client and server)
 - **Database:** Supabase
 - **CDN:** Cloudinary
-- **Auth:** AWS Cognito
+- **Auth:** Clerk
 
 ## Directory Structure
 
@@ -78,23 +81,25 @@
 
 ## API Endpoints
 
-### Existing
+### Core Endpoints
+
 - `GET /properties` - List properties with filters
 - `GET /properties/:id` - Property details
 - `POST /properties` - Create property (manager)
-- `GET /tenants/:cognitoId` - Tenant profile
-- `PUT /tenants/:cognitoId` - Update tenant
-- `POST /tenants/:cognitoId/favorites/:propertyId` - Add favorite
-- `DELETE /tenants/:cognitoId/favorites/:propertyId` - Remove favorite
-- `GET /managers/:cognitoId` - Manager profile
-- `PUT /managers/:cognitoId` - Update manager
+- `GET /tenants/:userId` - Tenant profile
+- `PUT /tenants/:userId` - Update tenant
+- `POST /tenants/:userId/favorites/:propertyId` - Add favorite
+- `DELETE /tenants/:userId/favorites/:propertyId` - Remove favorite
+- `GET /managers/:userId` - Manager profile
+- `PUT /managers/:userId` - Update manager
 - `GET /applications` - List applications
 - `POST /applications` - Create application
 - `PUT /applications/:id/status` - Update status
 - `GET /leases` - List leases
 - `GET /leases/:id/payments` - Lease payments
 
-### New Endpoints
+### Additional Endpoints
+
 - `PUT /properties/:id` - Update property
 - `DELETE /properties/:id` - Delete property
 - `GET /reviews` - List reviews
@@ -108,3 +113,4 @@
 - `POST /messages` - Send message
 - `POST /payments/intent` - Create payment intent
 - `POST /payments/webhook` - Stripe webhook
+- `POST /webhooks/clerk` - Clerk user events webhook

@@ -8,7 +8,19 @@ const prisma = new PrismaClient();
 
 const getLeases = async (req: Request, res: Response): Promise<void> => {
   try {
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+
+    // Filter leases by current user
+    const whereClause =
+      userRole === 'tenant'
+        ? { tenant: { cognitoId: userId } }
+        : userRole === 'manager'
+          ? { property: { managerCognitoId: userId } }
+          : {};
+
     const leases = await prisma.lease.findMany({
+      where: whereClause,
       include: {
         tenant: {
           select: { id: true, name: true },
@@ -19,11 +31,11 @@ const getLeases = async (req: Request, res: Response): Promise<void> => {
       },
     });
 
-    // Transform to DTOs
+    // Transform to DTOs - include propertyId for frontend matching
     const leasesDTO = leases.map((lease) => ({
       ...toLeaseDTO(lease),
+      propertyId: lease.propertyId,
       tenant: { id: lease.tenant.id, name: lease.tenant.name },
-
       property: toPropertyListDTO(lease.property as any),
     }));
 

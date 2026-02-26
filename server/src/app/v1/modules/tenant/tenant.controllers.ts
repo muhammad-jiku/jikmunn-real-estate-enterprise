@@ -188,7 +188,7 @@ const addFavoriteProperty = async (req: Request, res: Response): Promise<void> =
     });
 
     if (!tenant) {
-      res.status(404).json({ message: 'Tenant not found' });
+      sendNotFound(res, 'Tenant');
       return;
     }
 
