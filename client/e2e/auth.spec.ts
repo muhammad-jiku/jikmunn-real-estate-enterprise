@@ -5,9 +5,9 @@ test.describe('Authentication Flow', () => {
     // Try to access a protected route
     await page.goto('/managers/properties', { waitUntil: 'domcontentloaded' });
 
-    // Wait for either redirect to signin or the page to load
-    // The app should redirect unauthenticated users
-    await expect(page).toHaveURL(/\/(signin|managers|landing|$)/);
+    // Wait for either redirect to signin (local or Clerk hosted) or the page to load
+    // The app should redirect unauthenticated users to Clerk's hosted sign-in
+    await expect(page).toHaveURL(/\/signin|accounts\.dev\/sign-in|\/managers|\/landing/);
   });
 
   test('should show login options', async ({ page }) => {
