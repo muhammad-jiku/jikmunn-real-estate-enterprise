@@ -1,4 +1,4 @@
-# Jikmunn Real Estate Enterprise
+# Rentiful
 
 ### A Modern Full-Stack Real Estate Management Platform
 

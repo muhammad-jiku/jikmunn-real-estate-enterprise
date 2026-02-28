@@ -147,11 +147,11 @@ export const api = createApi({
 
           const { userId, role: userRole, email, name } = userInfo;
 
-          console.log('[getAuthUser] Fetching user:', {
-            userId,
-            name,
-            userRole,
-          });
+          // console.log('[getAuthUser] Fetching user:', {
+          //   userId,
+          //   name,
+          //   userRole,
+          // });
 
           // Validate userRole exists
           if (!userRole) {
@@ -169,12 +169,12 @@ export const api = createApi({
           const endpoint =
             normalizedRole === 'manager' ? `/managers/${userId}` : `/tenants/${userId}`;
 
-          console.log('[getAuthUser] Fetching from endpoint:', endpoint);
+          // console.log('[getAuthUser] Fetching from endpoint:', endpoint);
           let userDetailsResponse = await fetchWithBQ(endpoint);
 
           // if user doesn't exist, create new user
           if (userDetailsResponse.error && (userDetailsResponse.error as any).status === 404) {
-            console.log('[getAuthUser] User not found in DB, creating new user...');
+            // console.log('[getAuthUser] User not found in DB, creating new user...');
             userDetailsResponse = await createNewUserInDatabase(
               { userId, username: name },
               { payload: { email } },
@@ -191,7 +191,7 @@ export const api = createApi({
             return { error: { status: 'CUSTOM_ERROR' as const, error: errorMsg } };
           }
 
-          console.log('[getAuthUser] User retrieved successfully:', userDetailsResponse.data);
+          // console.log('[getAuthUser] User retrieved successfully:', userDetailsResponse.data);
           return {
             data: {
               cognitoInfo: { userId },

@@ -201,13 +201,13 @@ const EditProperty = () => {
   const hasOwnership = (() => {
     if (!authUser?.cognitoInfo?.userId || !property.manager) return false;
 
-    // Debug logging - remove after verifying
-    console.log('[EditProperty] Ownership check:', {
-      'property.manager.cognitoId': property.manager.cognitoId,
-      'property.manager.id': property.manager.id,
-      'authUser.cognitoInfo.userId': authUser.cognitoInfo.userId,
-      'authUser.userInfo?.id': authUser.userInfo?.id,
-    });
+    // // Debug logging - remove after verifying
+    // console.log('[EditProperty] Ownership check:', {
+    //   'property.manager.cognitoId': property.manager.cognitoId,
+    //   'property.manager.id': property.manager.id,
+    //   'authUser.cognitoInfo.userId': authUser.cognitoInfo.userId,
+    //   'authUser.userInfo?.id': authUser.userInfo?.id,
+    // });
 
     // Primary check: compare cognitoId if available
     if (property.manager.cognitoId) {

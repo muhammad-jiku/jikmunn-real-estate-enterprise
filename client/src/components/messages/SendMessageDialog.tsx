@@ -168,12 +168,12 @@ export function MessageButton({
 
   // Debug: log when recipientId is empty
   const handleClick = () => {
-    console.log('[MessageButton] Opening dialog with:', {
-      recipientId,
-      recipientName,
-      recipientType,
-      propertyId,
-    });
+    // console.log('[MessageButton] Opening dialog with:', {
+    //   recipientId,
+    //   recipientName,
+    //   recipientType,
+    //   propertyId,
+    // });
     setIsDialogOpen(true);
   };
 

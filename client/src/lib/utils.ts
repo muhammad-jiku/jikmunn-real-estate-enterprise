@@ -12,8 +12,7 @@ export function formatEnumString(str: string) {
 }
 
 export function formatPriceValue(value: number | null, isMin: boolean) {
-  if (value === null || value === 0)
-    return isMin ? 'Any Min Price' : 'Any Max Price';
+  if (value === null || value === 0) return isMin ? 'Any Min Price' : 'Any Max Price';
   if (value >= 1000) {
     const kValue = value / 1000;
     return isMin ? `$${kValue}k+` : `<$${kValue}k`;
@@ -38,10 +37,7 @@ type MutationMessages = {
   error: string;
 };
 
-export const withToast = async <T>(
-  mutationFn: Promise<T>,
-  messages: Partial<MutationMessages>
-) => {
+export const withToast = async <T>(mutationFn: Promise<T>, messages: Partial<MutationMessages>) => {
   const { success, error } = messages;
 
   try {
@@ -70,13 +66,13 @@ export const createNewUserInDatabase = async (
     phoneNumber: '',
   };
 
-  // Log the creation attempt for debugging
-  console.log(`[createNewUserInDatabase] Creating ${normalizedRole} user:`, {
-    endpoint: createEndpoint,
-    cognitoId: requestBody.cognitoId,
-    name: requestBody.name,
-    email: requestBody.email,
-  });
+  // // Log the creation attempt for debugging
+  // console.log(`[createNewUserInDatabase] Creating ${normalizedRole} user:`, {
+  //   endpoint: createEndpoint,
+  //   cognitoId: requestBody.cognitoId,
+  //   name: requestBody.name,
+  //   email: requestBody.email,
+  // });
 
   // Validate required fields before sending
   if (!requestBody.cognitoId) {
@@ -100,13 +96,14 @@ export const createNewUserInDatabase = async (
 
     if (createUserResponse.error) {
       console.error('[createNewUserInDatabase] API error:', createUserResponse.error);
-      const errorMessage = createUserResponse.error?.data?.message || 
-                          createUserResponse.error?.error || 
-                          'Failed to create user record';
+      const errorMessage =
+        createUserResponse.error?.data?.message ||
+        createUserResponse.error?.error ||
+        'Failed to create user record';
       throw new Error(errorMessage);
     }
 
-    console.log('[createNewUserInDatabase] User created successfully:', createUserResponse.data);
+    // console.log('[createNewUserInDatabase] User created successfully:', createUserResponse.data);
     return createUserResponse;
   } catch (error: any) {
     console.error('[createNewUserInDatabase] Exception:', error);

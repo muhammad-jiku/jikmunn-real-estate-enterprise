@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { useAuthSync } from '@/hooks/useAuthSync';
@@ -20,12 +21,12 @@ async function createUserInDatabaseAfterAuth(
 
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-    console.log('[Auth] Checking if user exists:', {
-      baseUrl,
-      checkEndpoint,
-      clerkId: userId,
-      userRole: normalizedRole,
-    });
+    // console.log('[Auth] Checking if user exists:', {
+    //   baseUrl,
+    //   checkEndpoint,
+    //   clerkId: userId,
+    //   userRole: normalizedRole,
+    // });
 
     // First check if user already exists
     const checkResponse = await fetch(`${baseUrl}${checkEndpoint}`, {
@@ -34,17 +35,17 @@ async function createUserInDatabaseAfterAuth(
       },
     });
 
-    console.log('[Auth] Check response status:', checkResponse.status);
+    // console.log('[Auth] Check response status:', checkResponse.status);
 
     if (checkResponse.status === 404) {
       // User doesn't exist, create them
       const createEndpoint = normalizedRole === 'manager' ? '/managers' : '/tenants';
 
-      console.log('[Auth] Creating new user in database:', {
-        clerkId: userId,
-        role: normalizedRole,
-        endpoint: `${baseUrl}${createEndpoint}`,
-      });
+      // console.log('[Auth] Creating new user in database:', {
+      //   clerkId: userId,
+      //   role: normalizedRole,
+      //   endpoint: `${baseUrl}${createEndpoint}`,
+      // });
 
       const createResponse = await fetch(`${baseUrl}${createEndpoint}`, {
         method: 'POST',
@@ -60,17 +61,17 @@ async function createUserInDatabaseAfterAuth(
         }),
       });
 
-      console.log('[Auth] Create response status:', createResponse.status);
+      // console.log('[Auth] Create response status:', createResponse.status);
 
       if (createResponse.ok) {
         const data = await createResponse.json();
-        console.log('[Auth] User created successfully:', data);
+        // console.log('[Auth] User created successfully:', data);
       } else {
         const errorText = await createResponse.text();
         console.error('[Auth] Failed to create user:', errorText);
       }
     } else if (checkResponse.ok) {
-      console.log('[Auth] User already exists in database');
+      // console.log('[Auth] User already exists in database');
     } else {
       console.error('[Auth] Unexpected check response:', checkResponse.status);
     }
@@ -99,7 +100,7 @@ const Auth = ({ children }: { children: React.ReactNode }) => {
     const syncUser = async () => {
       if (isSignedIn && user && !hasCreatedUser.current) {
         hasCreatedUser.current = true;
-        console.log('[Auth] User signed in, syncing to database...');
+        // console.log('[Auth] User signed in, syncing to database...');
 
         const userRole = (user.unsafeMetadata?.role as string) || 'tenant';
         const token = await getToken();
