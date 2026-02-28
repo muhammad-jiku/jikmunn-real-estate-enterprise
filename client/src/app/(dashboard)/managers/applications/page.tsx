@@ -191,7 +191,9 @@ Generated on ${new Date().toLocaleString()}
                       )}
                       {application.status === 'Denied' && (
                         <MessageButton
-                          recipientId={application.tenantCognitoId}
+                          recipientId={
+                            application.tenantCognitoId || application.tenant?.cognitoId || ''
+                          }
                           recipientName={application.tenant?.name || 'Tenant'}
                           recipientType="tenant"
                           propertyId={application.property?.id}
@@ -203,7 +205,9 @@ Generated on ${new Date().toLocaleString()}
                       {/* Always show message button for pending and approved */}
                       {(application.status === 'Pending' || application.status === 'Approved') && (
                         <MessageButton
-                          recipientId={application.tenantCognitoId}
+                          recipientId={
+                            application.tenantCognitoId || application.tenant?.cognitoId || ''
+                          }
                           recipientName={application.tenant?.name || 'Tenant'}
                           recipientType="tenant"
                           propertyId={application.property?.id}

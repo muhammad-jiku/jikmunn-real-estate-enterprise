@@ -39,6 +39,7 @@ declare global {
   interface ManagerWithImage extends Manager {
     image?: string;
     photoUrl?: string;
+    cognitoId: string; // Explicitly include for type safety
   }
 
   // Extended Tenant with relations
@@ -47,6 +48,7 @@ declare global {
     favoritePropertyIds?: number[];
     image?: string;
     photoUrl?: string;
+    cognitoId: string; // Explicitly include for type safety
   }
 
   // Extended Property with relations
@@ -59,6 +61,7 @@ declare global {
   interface ApplicationWithRelations extends Omit<Application, 'status' | 'applicationDate'> {
     status: ExtendedApplicationStatus;
     applicationDate: Date | string;
+    tenantCognitoId: string; // Explicitly include - needed for messaging
     property?: PropertyWithRelations;
     tenant?: TenantWithRelations;
     lease?: LeaseWithRelations;
