@@ -131,6 +131,17 @@ const EditProperty = () => {
     }
   }, [property, form]);
 
+  // Helper to check if current user owns this property
+  const isOwner = () => {
+    if (!authUser?.cognitoInfo?.userId || !property?.manager) return false;
+    // Primary check: compare cognitoId if available
+    if (property.manager.cognitoId) {
+      return property.manager.cognitoId === authUser.cognitoInfo.userId;
+    }
+    // Fallback: compare database IDs
+    return property.manager.id === authUser.userInfo?.id;
+  };
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onSubmit = async (data: any) => {
     if (!authUser?.cognitoInfo?.userId) {
@@ -138,7 +149,7 @@ const EditProperty = () => {
     }
 
     // Verify ownership
-    if (property?.manager?.cognitoId !== authUser.cognitoInfo.userId) {
+    if (!isOwner()) {
       throw new Error('Not authorized to edit this property');
     }
 
@@ -186,10 +197,27 @@ const EditProperty = () => {
   }
 
   // Check ownership - only after both property and authUser are loaded
-  if (
-    !authUser?.cognitoInfo?.userId ||
-    property.manager?.cognitoId !== authUser.cognitoInfo.userId
-  ) {
+  // Use cognitoId if available, otherwise fall back to database ID comparison
+  const hasOwnership = (() => {
+    if (!authUser?.cognitoInfo?.userId || !property.manager) return false;
+
+    // Debug logging - remove after verifying
+    console.log('[EditProperty] Ownership check:', {
+      'property.manager.cognitoId': property.manager.cognitoId,
+      'property.manager.id': property.manager.id,
+      'authUser.cognitoInfo.userId': authUser.cognitoInfo.userId,
+      'authUser.userInfo?.id': authUser.userInfo?.id,
+    });
+
+    // Primary check: compare cognitoId if available
+    if (property.manager.cognitoId) {
+      return property.manager.cognitoId === authUser.cognitoInfo.userId;
+    }
+    // Fallback: compare database IDs
+    return property.manager.id === authUser.userInfo?.id;
+  })();
+
+  if (!hasOwnership) {
     return (
       <div className="dashboard-container">
         <p>You are not authorized to edit this property</p>
