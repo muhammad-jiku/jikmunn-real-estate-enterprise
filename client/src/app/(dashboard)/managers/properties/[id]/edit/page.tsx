@@ -46,7 +46,7 @@ const EditProperty = () => {
   const router = useRouter();
   const propertyId = Number(id);
 
-  const { data: authUser } = useGetAuthUserQuery();
+  const { data: authUser, isLoading: authLoading } = useGetAuthUserQuery();
   const { data: property, isLoading: propertyLoading } = useGetPropertyQuery(propertyId);
   const [updateProperty, { isLoading: isUpdating }] = useUpdatePropertyMutation();
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
@@ -174,7 +174,8 @@ const EditProperty = () => {
     setExistingPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  if (propertyLoading) return <Loading />;
+  // Wait for both queries to finish loading
+  if (propertyLoading || authLoading) return <Loading />;
 
   if (!property) {
     return (
@@ -184,8 +185,11 @@ const EditProperty = () => {
     );
   }
 
-  // Check ownership
-  if (property.manager?.cognitoId !== authUser?.cognitoInfo?.userId) {
+  // Check ownership - only after both property and authUser are loaded
+  if (
+    !authUser?.cognitoInfo?.userId ||
+    property.manager?.cognitoId !== authUser.cognitoInfo.userId
+  ) {
     return (
       <div className="dashboard-container">
         <p>You are not authorized to edit this property</p>

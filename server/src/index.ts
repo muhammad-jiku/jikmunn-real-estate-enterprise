@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { config } from './config/index.config';
 /* ROUTE IMPORT */
+import { errorHandler } from './app/middleware/errorHandler';
 import routes from './app/v1/routes';
 import { initializeScheduledJobs } from './lib/scheduledJobs';
 
@@ -26,6 +27,9 @@ app.get('/', (req, res) => {
 
 app.use('/api/v1', routes);
 
+/* ERROR HANDLER - must be after routes */
+app.use(errorHandler);
+
 /* SERVER */
 app.listen(config.port, '0.0.0.0', () => {
   console.info(`Server running on port http://localhost:${config.port}`);
@@ -35,3 +39,5 @@ app.listen(config.port, '0.0.0.0', () => {
     initializeScheduledJobs();
   }
 });
+
+export default app;

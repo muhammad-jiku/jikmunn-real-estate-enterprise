@@ -1,112 +1,135 @@
 # Jikmunn Real Estate Enterprise
 
-_A full-stack real estate management platform built with Next.js, Express, Supabase, and AWS Cognito._
+### A Modern Full-Stack Real Estate Management Platform
+
+**Project Type:** Super Advanced
+
+_A production-ready, enterprise-grade real estate management platform built with Next.js, Express, Supabase, and Clerk._
 
 Rentiful is a real estate application built under the Jikmunn Real Estate Enterprise project. It enables tenants to sign in, search for suitable properties, and complete purchases seamlessly, while managers can efficiently oversee and manage leases.
 
 [![IMAGE ALT TEXT HERE](https://jikmunn-real-estate-enterprise-s3-images.s3.ap-southeast-1.amazonaws.com/banner.png)](https://main.d3rbuo7pe8yfmf.amplifyapp.com/)  
 👉 Click the image to visit the site.
 
-<!-- Inspired by Python version: https://github.com/biobootloader/wolverine -->
+---
+
+## 📋 Description
+
+- **Multi-Role Authentication** – Secure role-based access control with Clerk authentication for tenants and property managers
+- **Property Management** – Full CRUD operations for property listings with advanced filtering, amenities, and photo galleries
+- **Interactive Maps** – Mapbox-powered geographic search with location-based property discovery using PostGIS
+- **Real-Time Messaging** – Pusher-powered instant messaging system between tenants and property managers
+- **Payment Processing** – Stripe integration for secure rent payments, security deposits, and application fees
+- **Maintenance Ticketing** – Complete maintenance request system with status tracking, priority levels, and manager notifications
+- **Review & Rating System** – Property reviews with 1-5 star ratings and automatic average calculation
+- **In-App Notifications** – Real-time notifications for applications, payments, maintenance updates, and messages
+- **Lease Management** – Digital lease tracking with payment history, renewal alerts, and tenant management
+- **Responsive Design** – Mobile-first UI with TailwindCSS and shadcn/ui accessible components
+- **Comprehensive Testing** – Unit tests with Jest/Testing Library and E2E tests with Playwright
+- **Type Safety** – End-to-end TypeScript implementation with Zod schema validation
 
 ---
 
-## 🎉 Roadmap
+## 🛠️ Tech Stacks
 
-This project is currently available, with the following features:
+### Frontend
 
-- Responsive Web UI for tenants and managers 🌐
-- Tenant dashboard to browse, filter, and purchase properties 🏡
-- Manager dashboard to manage leases, payments, and tenants 📊
-- Secure authentication & role-based access control 🔐
-- Advanced property search with filters and maps 🗺️
+| Technology      | Version | Purpose                         |
+| --------------- | ------- | ------------------------------- |
+| Next.js         | 16.x    | React framework with App Router |
+| React           | 19.x    | UI library                      |
+| TypeScript      | 5.x     | Type-safe JavaScript            |
+| TailwindCSS     | 4.x     | Utility-first CSS framework     |
+| shadcn/ui       | Latest  | Accessible Radix UI components  |
+| Redux Toolkit   | 2.x     | State management with RTK Query |
+| React Hook Form | 7.x     | Form handling                   |
+| Zod             | 4.x     | Schema validation               |
+| Mapbox GL       | 3.x     | Interactive maps                |
+| Framer Motion   | 12.x    | Animations                      |
+| Clerk           | 6.x     | Authentication                  |
+| Stripe.js       | 8.x     | Payment UI components           |
+| Pusher.js       | 8.x     | Real-time WebSocket client      |
+| FilePond        | 4.x     | File uploads                    |
+| Lucide React    | Latest  | Icon library                    |
 
-<!-- Planned features include:
-- Integration with payment gateways 💳
-- Notifications for rent due dates, approvals, and updates 🔔
-- Lease contract generation and digital signatures ✍️
-- Multi-language and multi-currency support 🌍
-- Mobile app version for iOS and Android 📱   -->
+### Backend
 
----
-
-## 🛠️ Tech Stack
-
-- **Frontend:** Next.js with TailwindCSS ⚡ – fast, scalable UI development
-- **Backend:** Express.js with Prisma ORM 🔗 – efficient API and database handling
-- **Database:** Supabase (PostgreSQL) 🐘 – reliable relational database with PostGIS
-- **Authentication:** AWS Cognito 🔐 – secure user authentication
-- **Storage:** Cloudinary 🖼️ – optimized image management
-- **Deployment:** Vercel 🚀 – serverless deployment for both client and server
-
----
-
-## 👨‍🚀 Getting Started
-
-> 🚧 You will need [Node.js](https://nodejs.org/en/) installed.
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/muhammad-jiku/jikmunn-real-estate-enterprise.git
-```
-
----
-
-### 2. Frontend Setup
-
-```bash
-cd client
-yarn
-```
-
-Create an `.env` file inside the `client` folder:
-
-```bash
-NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN= # Your Mapbox Access Token
-NEXT_PUBLIC_AWS_COGNITO_USER_POOL_ID= # Your AWS Cognito Pool ID
-NEXT_PUBLIC_AWS_COGNITO_USER_POOL_CLIENT_ID= # Your AWS Cognito Client ID
-NEXT_PUBLIC_API_BASE_URL= # Your API Base URL
-```
-
-Run the development server:
-
-```bash
-yarn dev
-```
+| Technology         | Version | Purpose                    |
+| ------------------ | ------- | -------------------------- |
+| Node.js            | 20+     | JavaScript runtime         |
+| Express.js         | 5.x     | Web framework              |
+| TypeScript         | 5.x     | Type-safe JavaScript       |
+| Prisma             | 6.x     | Type-safe ORM              |
+| PostgreSQL         | 15+     | Primary database           |
+| PostGIS            | 3.x     | Geospatial extension       |
+| Supabase           | Latest  | Database hosting           |
+| Clerk Express      | 1.x     | JWT verification           |
+| Stripe             | 20.x    | Payment processing         |
+| Pusher             | 5.x     | Real-time WebSocket server |
+| Cloudinary         | 2.x     | Image storage & CDN        |
+| Winston            | 3.x     | Logging                    |
+| Helmet             | 8.x     | Security headers           |
+| express-rate-limit | 8.x     | API rate limiting          |
 
 ---
 
-### 3. Backend Setup
+## 🔧 Development Tools
 
-```bash
-cd server
-yarn
-```
+### Build & Development
 
-Create an `.env` file inside the `server` folder:
+| Tool            | Purpose                               |
+| --------------- | ------------------------------------- |
+| Yarn Workspaces | Monorepo package management           |
+| Concurrently    | Run multiple processes simultaneously |
+| Nodemon         | Auto-restart server on changes        |
+| ts-node / tsx   | TypeScript execution                  |
+| SWC             | Fast TypeScript/JavaScript compiler   |
+| PostCSS         | CSS processing                        |
 
-```bash
-PORT=8000 # Server port
-DATABASE_URL= # Your Supabase PostgreSQL Connection String
-CLOUDINARY_CLOUD_NAME= # Your Cloudinary Cloud Name
-CLOUDINARY_API_KEY= # Your Cloudinary API Key
-CLOUDINARY_API_SECRET= # Your Cloudinary API Secret
-```
+### Testing
 
-Run database migrations:
+| Tool            | Purpose                         |
+| --------------- | ------------------------------- |
+| Jest            | Unit testing framework          |
+| Testing Library | React component testing         |
+| Playwright      | End-to-end browser testing      |
+| Supertest       | HTTP assertions for API testing |
 
-```bash
-yarn prisma:generate
-npx prisma migrate deploy
-```
+### Code Quality
 
-Run the backend server:
+| Tool        | Purpose                       |
+| ----------- | ----------------------------- |
+| ESLint      | JavaScript/TypeScript linting |
+| Prettier    | Code formatting               |
+| TypeScript  | Static type checking          |
+| Husky       | Git hooks                     |
+| lint-staged | Run linters on staged files   |
 
-```bash
-yarn dev
-```
+### Database & Deployment
+
+| Tool          | Purpose                       |
+| ------------- | ----------------------------- |
+| Prisma CLI    | Database migrations & seeding |
+| Prisma Studio | Database GUI                  |
+| Vercel        | Serverless deployment         |
+| Supabase      | Database hosting              |
+| Cloudinary    | Image hosting & CDN           |
 
 ---
 
-✅ You’re all set! The frontend will run on `http://localhost:3000` and the backend on your configured API base URL.
+## 📚 Documentation
+
+For detailed setup instructions, API architecture, and project structure, see the [Project Documentation](docs/PROJECT.md).
+
+---
+
+## 📄 License
+
+This project is for portfolio and educational purposes.
+
+---
+
+## 👤 Author
+
+**Muhammad Jiku**  
+GitHub: [@muhammad-jiku](https://github.com/muhammad-jiku)

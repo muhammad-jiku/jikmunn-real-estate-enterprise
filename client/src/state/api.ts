@@ -142,7 +142,7 @@ export const api = createApi({
 
           // No token means user is not authenticated
           if (!token || !userInfo) {
-            return { error: 'Not authenticated' };
+            return { error: { status: 'CUSTOM_ERROR' as const, error: 'Not authenticated' } };
           }
 
           const { userId, role: userRole, email, name } = userInfo;
@@ -156,7 +156,12 @@ export const api = createApi({
           // Validate userRole exists
           if (!userRole) {
             console.error('[getAuthUser] No userRole found');
-            return { error: 'User role not found. Please complete role selection.' };
+            return {
+              error: {
+                status: 'CUSTOM_ERROR' as const,
+                error: 'User role not found. Please complete role selection.',
+              },
+            };
           }
 
           // Use case-insensitive comparison for role
@@ -183,7 +188,7 @@ export const api = createApi({
               (userDetailsResponse.error as any)?.data?.message ||
               (userDetailsResponse.error as any)?.error ||
               'Failed to fetch user';
-            return { error: errorMsg };
+            return { error: { status: 'CUSTOM_ERROR' as const, error: errorMsg } };
           }
 
           console.log('[getAuthUser] User retrieved successfully:', userDetailsResponse.data);
@@ -196,7 +201,12 @@ export const api = createApi({
           };
         } catch (error: any) {
           console.error('[getAuthUser] Exception:', error);
-          return { error: error.message || 'Could not fetch user data' };
+          return {
+            error: {
+              status: 'CUSTOM_ERROR' as const,
+              error: error.message || 'Could not fetch user data',
+            },
+          };
         }
       },
     }),
@@ -748,6 +758,12 @@ export const api = createApi({
         body,
       }),
       invalidatesTags: ['Messages'],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withToast(queryFulfilled, {
+          success: 'Message sent successfully!',
+          error: 'Failed to send message.',
+        });
+      },
     }),
 
     // Payment endpoints
