@@ -187,34 +187,26 @@ Generated on ${new Date().toLocaleString()}
                           >
                             Deny
                           </button>
+                          <MessageButton
+                            recipientId={
+                              application.tenantCognitoId || application.tenant?.cognitoId || ''
+                            }
+                            recipientName={application.tenant?.name || 'Tenant'}
+                            recipientType="tenant"
+                            propertyId={application.property?.id}
+                            propertyName={application.property?.name}
+                            context="application"
+                            variant="outline"
+                          />
                         </>
                       )}
-                      {application.status === 'Denied' && (
-                        <MessageButton
-                          recipientId={
-                            application.tenantCognitoId || application.tenant?.cognitoId || ''
-                          }
-                          recipientName={application.tenant?.name || 'Tenant'}
-                          recipientType="tenant"
-                          propertyId={application.property?.id}
-                          propertyName={application.property?.name}
-                          context="application"
-                          className="bg-gray-800 text-white hover:bg-secondary-500 hover:text-primary-50"
-                        />
-                      )}
-                      {/* Always show message button for pending and approved */}
-                      {(application.status === 'Pending' || application.status === 'Approved') && (
-                        <MessageButton
-                          recipientId={
-                            application.tenantCognitoId || application.tenant?.cognitoId || ''
-                          }
-                          recipientName={application.tenant?.name || 'Tenant'}
-                          recipientType="tenant"
-                          propertyId={application.property?.id}
-                          propertyName={application.property?.name}
-                          context="application"
-                          variant="outline"
-                        />
+                      {application.status === 'Approved' && application.property?.id && (
+                        <Link
+                          href={`/managers/properties/${application.property.id}`}
+                          className="px-4 py-2 text-sm text-white bg-primary-700 rounded-sm hover:bg-primary-600"
+                        >
+                          Property Details
+                        </Link>
                       )}
                     </div>
                   </div>
