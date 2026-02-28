@@ -220,14 +220,71 @@ const sendMessage = asyncHandler(async (req: Request, res: Response): Promise<vo
   const userId = req.user?.id;
   const userRole = req.user?.role;
 
-  // Get sender info
+  // Validate receiverCognitoId is not empty
+  if (!receiverCognitoId || receiverCognitoId.trim() === '') {
+    res.status(400).json({
+      success: false,
+      message: 'Receiver ID is required',
+    });
+    return;
+  }
+
+  // Validate sender exists
+  if (!userId) {
+    res.status(401).json({
+      success: false,
+      message: 'User not authenticated',
+    });
+    return;
+  }
+
+  // Get sender info and validate they exist in database
   let senderName = '';
-  if (userRole === 'tenant') {
+  if (userRole?.toLowerCase() === 'tenant') {
     const tenant = await prisma.tenant.findUnique({ where: { cognitoId: userId } });
-    senderName = tenant?.name || '';
+    if (!tenant) {
+      res.status(400).json({
+        success: false,
+        message: 'Sender tenant not found in database',
+      });
+      return;
+    }
+    senderName = tenant.name || '';
   } else {
     const manager = await prisma.manager.findUnique({ where: { cognitoId: userId } });
-    senderName = manager?.name || '';
+    if (!manager) {
+      res.status(400).json({
+        success: false,
+        message: 'Sender manager not found in database',
+      });
+      return;
+    }
+    senderName = manager.name || '';
+  }
+
+  // Validate receiver exists in database
+  if (receiverType === 'tenant') {
+    const receiverTenant = await prisma.tenant.findUnique({
+      where: { cognitoId: receiverCognitoId },
+    });
+    if (!receiverTenant) {
+      res.status(400).json({
+        success: false,
+        message: `Receiver tenant not found with ID: ${receiverCognitoId}`,
+      });
+      return;
+    }
+  } else {
+    const receiverManager = await prisma.manager.findUnique({
+      where: { cognitoId: receiverCognitoId },
+    });
+    if (!receiverManager) {
+      res.status(400).json({
+        success: false,
+        message: `Receiver manager not found with ID: ${receiverCognitoId}`,
+      });
+      return;
+    }
   }
 
   const messageData: Record<string, unknown> = {
@@ -235,7 +292,7 @@ const sendMessage = asyncHandler(async (req: Request, res: Response): Promise<vo
     propertyId: propertyId ? Number(propertyId) : null,
   };
 
-  if (userRole === 'tenant') {
+  if (userRole?.toLowerCase() === 'tenant') {
     messageData.senderTenantCognitoId = userId;
   } else {
     messageData.senderManagerCognitoId = userId;
