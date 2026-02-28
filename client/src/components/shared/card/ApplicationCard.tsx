@@ -18,6 +18,17 @@ const ApplicationCard = ({ application, userType, children }: ApplicationCardPro
 
   const contactPerson = userType === 'manager' ? application.tenant : application.manager;
 
+  // For manager view, use the application's contact details (from the form)
+  // For tenant view, use the manager's contact details
+  const contactEmail =
+    userType === 'manager' ? application.email || contactPerson?.email : contactPerson?.email;
+  const contactPhone =
+    userType === 'manager'
+      ? application.phoneNumber || contactPerson?.phoneNumber
+      : contactPerson?.phoneNumber;
+  const contactName =
+    userType === 'manager' ? application.name || contactPerson?.name : contactPerson?.name;
+
   const handleImageError = () => {
     if (imgSrc !== '/placeholder.jpg') {
       setImgSrc('/placeholder.jpg');
@@ -105,18 +116,18 @@ const ApplicationCard = ({ application, userType, children }: ApplicationCardPro
                 width={40}
                 height={40}
                 className="rounded-full mr-2 min-w-[40px] min-h-[40px]"
-                alt={contactPerson?.name ?? 'Contact'}
+                alt={contactName ?? 'Contact'}
               />
             </div>
             <div className="flex flex-col gap-2">
-              <div className="font-semibold">{contactPerson?.name ?? 'N/A'}</div>
+              <div className="font-semibold">{contactName ?? 'N/A'}</div>
               <div className="text-sm flex items-center text-primary-600">
                 <PhoneCall className="w-5 h-5 mr-2" />
-                {contactPerson?.phoneNumber ?? 'N/A'}
+                {contactPhone ?? 'N/A'}
               </div>
               <div className="text-sm flex items-center text-primary-600">
                 <Mail className="w-5 h-5 mr-2" />
-                {contactPerson?.email ?? 'N/A'}
+                {contactEmail ?? 'N/A'}
               </div>
             </div>
           </div>

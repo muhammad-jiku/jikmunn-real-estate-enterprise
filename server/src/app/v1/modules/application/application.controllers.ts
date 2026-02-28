@@ -135,6 +135,7 @@ const listApplications = async (req: Request, res: Response): Promise<void> => {
         : null,
     }));
 
+    // Authentication is auto-detected from res.locals - no sanitization for authenticated users
     sendSuccess(res, formattedApplicationsDTO, 'Applications retrieved successfully');
   } catch (error: any) {
     console.error('List applications error:', error);

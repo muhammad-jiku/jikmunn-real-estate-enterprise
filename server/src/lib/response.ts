@@ -165,9 +165,10 @@ export function isProduction(): boolean {
 }
 
 /**
- * Sanitize data based on environment.
- * In development, returns data as-is for debugging.
- * In production, strips sensitive fields.
+ * Sanitize data based on environment and authentication status.
+ * - In development: returns data as-is for debugging
+ * - In production when authenticated: returns data as-is (user can see their own data)
+ * - In production when NOT authenticated: strips sensitive fields
  */
 export function sanitizeForResponse<T>(
   data: T,
@@ -176,12 +177,24 @@ export function sanitizeForResponse<T>(
     removeInternalIds?: boolean;
     sanitizeUserFields?: boolean;
     excludeFields?: string[];
+    isAuthenticated?: boolean;
   } = {}
 ): T {
-  const { alwaysSanitize = false, ...sanitizeOptions } = options;
+  const { alwaysSanitize = false, isAuthenticated = false, ...sanitizeOptions } = options;
 
-  // In development, optionally skip sanitization for easier debugging
-  if (!isProduction() && !alwaysSanitize) {
+  // In development, skip sanitization for easier debugging
+  if (!isProduction()) {
+    return data;
+  }
+
+  // In production, skip sanitization for authenticated users
+  // They should be able to see contact info and IDs needed for messaging
+  if (isAuthenticated && !alwaysSanitize) {
+    return data;
+  }
+
+  // If alwaysSanitize is false and not in production, return as-is
+  if (!alwaysSanitize && !isProduction()) {
     return data;
   }
 
@@ -207,11 +220,18 @@ export function sendSuccess<T>(
   options: {
     sanitize?: boolean;
     excludeFields?: string[];
+    isAuthenticated?: boolean;
   } = {}
 ): void {
   const { sanitize = true, excludeFields } = options;
 
-  const sanitizedData = sanitize ? sanitizeForResponse(data, { excludeFields }) : data;
+  // Auto-detect authentication from res.locals (set by auth middleware)
+  // Can be overridden by explicitly passing isAuthenticated option
+  const isAuthenticated = options.isAuthenticated ?? res.locals?.isAuthenticated ?? false;
+
+  const sanitizedData = sanitize
+    ? sanitizeForResponse(data, { excludeFields, isAuthenticated })
+    : data;
 
   res.status(statusCode).json({
     success: true,
@@ -231,11 +251,17 @@ export function sendPaginatedSuccess<T>(
   options: {
     sanitize?: boolean;
     excludeFields?: string[];
+    isAuthenticated?: boolean;
   } = {}
 ): void {
   const { sanitize = true, excludeFields } = options;
 
-  const sanitizedData = sanitize ? sanitizeForResponse(data, { excludeFields }) : data;
+  // Auto-detect authentication from res.locals (set by auth middleware)
+  const isAuthenticated = options.isAuthenticated ?? res.locals?.isAuthenticated ?? false;
+
+  const sanitizedData = sanitize
+    ? sanitizeForResponse(data, { excludeFields, isAuthenticated })
+    : data;
 
   res.status(200).json({
     success: true,

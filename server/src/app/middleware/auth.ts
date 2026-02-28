@@ -51,6 +51,9 @@ export const auth = (allowedRoles: string[]) => {
         role: userRole,
       };
 
+      // Store authentication status in res.locals for response sanitization
+      res.locals.isAuthenticated = true;
+
       const hasAccess = allowedRoles.includes(userRole.toLowerCase());
 
       if (!hasAccess) {
