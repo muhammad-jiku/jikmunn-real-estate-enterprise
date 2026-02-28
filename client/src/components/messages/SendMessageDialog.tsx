@@ -38,10 +38,27 @@ export function SendMessageDialog({
 }: SendMessageDialogProps) {
   const router = useRouter();
   const [messageContent, setMessageContent] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
 
   const handleSendMessage = async () => {
     if (!messageContent.trim()) return;
+
+    // Validate recipientId before sending
+    if (!recipientId || recipientId.trim() === '') {
+      setError(
+        'Cannot send message: Recipient ID is missing. Please try again or contact support.'
+      );
+      console.error('[SendMessageDialog] recipientId is empty:', {
+        recipientId,
+        recipientName,
+        recipientType,
+        propertyId,
+      });
+      return;
+    }
+
+    setError(null);
 
     try {
       const payload: {
@@ -68,8 +85,9 @@ export function SendMessageDialog({
       // Navigate to messages
       const messagesPath = recipientType === 'tenant' ? '/managers/messages' : '/tenants/messages';
       router.push(messagesPath);
-    } catch (error) {
-      console.error('Failed to send message:', error);
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      setError('Failed to send message. Please try again.');
     }
   };
 
@@ -99,6 +117,11 @@ export function SendMessageDialog({
             {context && ` (${context})`}
           </DialogDescription>
         </DialogHeader>
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
         <div className="py-4">
           <Textarea
             placeholder={getPlaceholder()}
@@ -143,9 +166,29 @@ export function MessageButton({
 }: MessageButtonProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  // Debug: log when recipientId is empty
+  const handleClick = () => {
+    console.log('[MessageButton] Opening dialog with:', {
+      recipientId,
+      recipientName,
+      recipientType,
+      propertyId,
+    });
+    setIsDialogOpen(true);
+  };
+
+  // Don't render the button if recipientId is missing
+  if (!recipientId || recipientId.trim() === '') {
+    console.warn('[MessageButton] recipientId is empty, hiding button:', {
+      recipientName,
+      recipientType,
+    });
+    return null;
+  }
+
   return (
     <>
-      <Button variant={variant} className={className} onClick={() => setIsDialogOpen(true)}>
+      <Button variant={variant} className={className} onClick={handleClick}>
         <MessageSquare className="w-4 h-4 mr-2" />
         Message
       </Button>
