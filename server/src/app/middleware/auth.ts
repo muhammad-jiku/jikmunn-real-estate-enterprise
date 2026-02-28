@@ -69,3 +69,52 @@ export const auth = (allowedRoles: string[]) => {
     }
   };
 };
+
+/**
+ * Optional authentication middleware
+ * Sets req.user and res.locals.isAuthenticated if a valid token is present,
+ * but doesn't fail if no token or invalid token is provided.
+ * Useful for public endpoints that want to provide more data to authenticated users.
+ */
+export const optionalAuth = () => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      // No token provided - continue as unauthenticated
+      res.locals.isAuthenticated = false;
+      next();
+      return;
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    try {
+      // Verify the token with Clerk
+      const verifiedToken = await verifyToken(token, {
+        secretKey: process.env.CLERK_SECRET_KEY!,
+      });
+      const userId = verifiedToken.sub;
+
+      if (userId) {
+        // Get user details
+        const user = await clerkClient.users.getUser(userId);
+        const userRole = (user.unsafeMetadata?.role as string) || 'tenant';
+
+        req.user = {
+          id: userId,
+          role: userRole,
+        };
+
+        res.locals.isAuthenticated = true;
+      } else {
+        res.locals.isAuthenticated = false;
+      }
+    } catch {
+      // Token verification failed - continue as unauthenticated
+      res.locals.isAuthenticated = false;
+    }
+
+    next();
+  };
+};

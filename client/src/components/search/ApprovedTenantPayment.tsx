@@ -25,21 +25,35 @@ interface PaymentFormProps {
   onCancel: () => void;
 }
 
-const PaymentForm = ({ clientSecret: _clientSecret, onSuccess, onCancel }: PaymentFormProps) => {
+const PaymentForm = ({ clientSecret, onSuccess, onCancel }: PaymentFormProps) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [hasSucceeded, setHasSucceeded] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements) {
+    if (!stripe || !elements || isProcessing || hasSucceeded) {
       return;
     }
 
     setIsProcessing(true);
 
     try {
+      // First, check if the PaymentIntent is already confirmed/succeeded
+      // This handles cases where user returns from a redirect
+      const { paymentIntent: existingIntent } = await stripe.retrievePaymentIntent(clientSecret);
+
+      if (existingIntent?.status === 'succeeded') {
+        // Payment already succeeded (e.g., from redirect)
+        setHasSucceeded(true);
+        toast.success('Payment successful!');
+        onSuccess(existingIntent.id);
+        return;
+      }
+
+      // Proceed with confirmation only if not already succeeded
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
@@ -49,8 +63,21 @@ const PaymentForm = ({ clientSecret: _clientSecret, onSuccess, onCancel }: Payme
       });
 
       if (error) {
+        // Handle the specific case where payment was already confirmed
+        if (error.code === 'payment_intent_unexpected_state') {
+          // Try to retrieve the payment intent to get its current state
+          const { paymentIntent: confirmedIntent } =
+            await stripe.retrievePaymentIntent(clientSecret);
+          if (confirmedIntent?.status === 'succeeded') {
+            setHasSucceeded(true);
+            toast.success('Payment successful!');
+            onSuccess(confirmedIntent.id);
+            return;
+          }
+        }
         toast.error(error.message || 'Payment failed');
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        setHasSucceeded(true);
         toast.success('Payment successful!');
         onSuccess(paymentIntent.id);
       }

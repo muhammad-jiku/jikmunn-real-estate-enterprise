@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { auth } from '../../../middleware/auth';
+import { auth, optionalAuth } from '../../../middleware/auth';
 import { PropertyControllers } from './property.controllers';
 
 const storage = multer.memoryStorage();
@@ -11,14 +11,14 @@ const router = express.Router();
 router
   .route('/')
   .post(auth(['manager']), upload.array('photos'), PropertyControllers.createProperty)
-  .get(PropertyControllers.getProperties);
+  .get(optionalAuth(), PropertyControllers.getProperties);
 
 // Batch geocode all properties with 0,0 coordinates (admin operation)
 router.post('/geocode-all', auth(['manager']), PropertyControllers.batchGeocodeProperties);
 
 router
   .route('/:id')
-  .get(PropertyControllers.getProperty)
+  .get(optionalAuth(), PropertyControllers.getProperty)
   .put(auth(['manager']), upload.array('photos'), PropertyControllers.updateProperty)
   .delete(auth(['manager']), PropertyControllers.deleteProperty);
 

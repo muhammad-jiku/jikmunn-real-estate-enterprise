@@ -379,6 +379,7 @@ const completeInitialPayment = async (req: Request, res: Response): Promise<void
       include: {
         property: true,
         tenant: true,
+        lease: true,
       },
     });
 
@@ -387,9 +388,50 @@ const completeInitialPayment = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    // Check if payment was already completed (idempotency)
+    if ((application.status as string) === 'Approved' && application.lease) {
+      // Already processed - return success to be idempotent
+      const responseDTO = {
+        message: 'Payment was already completed.',
+        application: {
+          id: application.id,
+          status: application.status,
+          propertyId: application.propertyId,
+        },
+        lease: toLeaseDTO(application.lease),
+      };
+      sendSuccess(res, responseDTO, 'Payment already completed');
+      return;
+    }
+
     if ((application.status as string) !== 'AwaitingPayment') {
       sendBadRequest(res, 'Application is not awaiting payment');
       return;
+    }
+
+    // Check for duplicate stripePaymentId to prevent double-processing
+    if (stripePaymentId) {
+      const existingPayment = await prisma.payment.findFirst({
+        where: { stripePaymentId },
+      });
+      if (existingPayment) {
+        // Payment already recorded - return success
+        const existingApplication = await prisma.application.findUnique({
+          where: { id: Number(id) },
+          include: { lease: true },
+        });
+        const responseDTO = {
+          message: 'Payment was already processed.',
+          application: {
+            id: existingApplication?.id,
+            status: existingApplication?.status,
+            propertyId: existingApplication?.propertyId,
+          },
+          lease: existingApplication?.lease ? toLeaseDTO(existingApplication.lease) : null,
+        };
+        sendSuccess(res, responseDTO, 'Payment already processed');
+        return;
+      }
     }
 
     const leaseStartDate = startDate ? new Date(startDate) : new Date();
