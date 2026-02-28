@@ -445,84 +445,90 @@ const completeInitialPayment = async (req: Request, res: Response): Promise<void
     const totalInitialPayment = securityDeposit + firstMonthRent + applicationFee;
 
     // Create lease and record payment in a transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Create the lease
-      const newLease = await tx.lease.create({
-        data: {
-          startDate: leaseStartDate,
-          endDate: leaseEndDate,
-          rent: application.property.pricePerMonth,
-          deposit: application.property.securityDeposit,
-          propertyId: application.propertyId,
-          tenantCognitoId: application.tenantCognitoId,
-        },
-      });
-
-      // Record the initial payment
-      const payment = await tx.payment.create({
-        data: {
-          amountDue: totalInitialPayment,
-          amountPaid: totalInitialPayment,
-          dueDate: new Date(),
-          paymentDate: new Date(),
-          paymentStatus: 'Paid',
-          paymentType: 'InitialPayment',
-          applicationId: application.id,
-          leaseId: newLease.id,
-          stripePaymentId: stripePaymentId || null,
-          description: `Initial payment: Security deposit ($${securityDeposit}) + First month rent ($${firstMonthRent}) + Application fee ($${applicationFee})`,
-        },
-      });
-
-      // Update application status to Approved and link lease
-      const updatedApplication = await tx.application.update({
-        where: { id: Number(id) },
-        data: {
-          status: 'Approved',
-          leaseId: newLease.id,
-        },
-        include: {
-          property: true,
-          tenant: true,
-          lease: true,
-        },
-      });
-
-      // Connect tenant to property
-      await tx.property.update({
-        where: { id: application.propertyId },
-        data: {
-          tenants: {
-            connect: { cognitoId: application.tenantCognitoId },
+    // Increase timeout to 15s as this involves multiple DB operations including createMany
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // Create the lease
+        const newLease = await tx.lease.create({
+          data: {
+            startDate: leaseStartDate,
+            endDate: leaseEndDate,
+            rent: application.property.pricePerMonth,
+            deposit: application.property.securityDeposit,
+            propertyId: application.propertyId,
+            tenantCognitoId: application.tenantCognitoId,
           },
-        },
-      });
-
-      // Generate monthly payment schedule (starting from month 2)
-      const monthlyPayments = [];
-      for (let i = 1; i <= 11; i++) {
-        const dueDate = new Date(leaseStartDate);
-        dueDate.setMonth(dueDate.getMonth() + i);
-        dueDate.setDate(1); // Due on 1st of each month
-
-        monthlyPayments.push({
-          amountDue: application.property.pricePerMonth,
-          amountPaid: 0,
-          dueDate,
-          paymentStatus: 'Pending' as const,
-          paymentType: 'MonthlyRent' as const,
-          leaseId: newLease.id,
-          gracePeriodDays: 5,
-          description: `Monthly rent - ${dueDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
         });
+
+        // Record the initial payment
+        const payment = await tx.payment.create({
+          data: {
+            amountDue: totalInitialPayment,
+            amountPaid: totalInitialPayment,
+            dueDate: new Date(),
+            paymentDate: new Date(),
+            paymentStatus: 'Paid',
+            paymentType: 'InitialPayment',
+            applicationId: application.id,
+            leaseId: newLease.id,
+            stripePaymentId: stripePaymentId || null,
+            description: `Initial payment: Security deposit ($${securityDeposit}) + First month rent ($${firstMonthRent}) + Application fee ($${applicationFee})`,
+          },
+        });
+
+        // Update application status to Approved and link lease
+        const updatedApplication = await tx.application.update({
+          where: { id: Number(id) },
+          data: {
+            status: 'Approved',
+            leaseId: newLease.id,
+          },
+          include: {
+            property: true,
+            tenant: true,
+            lease: true,
+          },
+        });
+
+        // Connect tenant to property
+        await tx.property.update({
+          where: { id: application.propertyId },
+          data: {
+            tenants: {
+              connect: { cognitoId: application.tenantCognitoId },
+            },
+          },
+        });
+
+        // Generate monthly payment schedule (starting from month 2)
+        const monthlyPayments = [];
+        for (let i = 1; i <= 11; i++) {
+          const dueDate = new Date(leaseStartDate);
+          dueDate.setMonth(dueDate.getMonth() + i);
+          dueDate.setDate(1); // Due on 1st of each month
+
+          monthlyPayments.push({
+            amountDue: application.property.pricePerMonth,
+            amountPaid: 0,
+            dueDate,
+            paymentStatus: 'Pending' as const,
+            paymentType: 'MonthlyRent' as const,
+            leaseId: newLease.id,
+            gracePeriodDays: 5,
+            description: `Monthly rent - ${dueDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
+          });
+        }
+
+        await tx.payment.createMany({
+          data: monthlyPayments,
+        });
+
+        return { updatedApplication, newLease, payment };
+      },
+      {
+        timeout: 15000, // 15 seconds - this transaction creates lease, payments, and updates multiple records
       }
-
-      await tx.payment.createMany({
-        data: monthlyPayments,
-      });
-
-      return { updatedApplication, newLease, payment };
-    });
+    );
 
     // Transform to DTOs for response
     const responseDTO = {

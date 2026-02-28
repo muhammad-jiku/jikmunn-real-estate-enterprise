@@ -25,7 +25,22 @@ interface PaymentFormProps {
   onCancel: () => void;
 }
 
-const PaymentForm = ({ clientSecret, onSuccess, onCancel }: PaymentFormProps) => {
+interface PaymentFormPropsExtended extends PaymentFormProps {
+  onPaymentConfirmed?: (paymentIntentId: string) => void;
+  paymentSucceededButLeaseFailed?: boolean;
+  onRetryLeaseCreation?: () => void;
+  isRetryingLease?: boolean;
+}
+
+const PaymentForm = ({
+  clientSecret,
+  onSuccess,
+  onCancel,
+  onPaymentConfirmed,
+  paymentSucceededButLeaseFailed,
+  onRetryLeaseCreation,
+  isRetryingLease,
+}: PaymentFormPropsExtended) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -42,13 +57,15 @@ const PaymentForm = ({ clientSecret, onSuccess, onCancel }: PaymentFormProps) =>
 
     try {
       // First, check if the PaymentIntent is already confirmed/succeeded
-      // This handles cases where user returns from a redirect
+      // This handles cases where user returns from a redirect or previous attempt
       const { paymentIntent: existingIntent } = await stripe.retrievePaymentIntent(clientSecret);
 
       if (existingIntent?.status === 'succeeded') {
-        // Payment already succeeded (e.g., from redirect)
+        // Payment already succeeded (e.g., from redirect or previous attempt)
         setHasSucceeded(true);
-        toast.success('Payment successful!');
+        toast.success('Payment confirmed!');
+        // Notify parent that payment is confirmed (for potential retry of lease creation)
+        onPaymentConfirmed?.(existingIntent.id);
         onSuccess(existingIntent.id);
         return;
       }
@@ -70,7 +87,8 @@ const PaymentForm = ({ clientSecret, onSuccess, onCancel }: PaymentFormProps) =>
             await stripe.retrievePaymentIntent(clientSecret);
           if (confirmedIntent?.status === 'succeeded') {
             setHasSucceeded(true);
-            toast.success('Payment successful!');
+            toast.success('Payment confirmed!');
+            onPaymentConfirmed?.(confirmedIntent.id);
             onSuccess(confirmedIntent.id);
             return;
           }
@@ -79,6 +97,7 @@ const PaymentForm = ({ clientSecret, onSuccess, onCancel }: PaymentFormProps) =>
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
         setHasSucceeded(true);
         toast.success('Payment successful!');
+        onPaymentConfirmed?.(paymentIntent.id);
         onSuccess(paymentIntent.id);
       }
     } catch (_err) {
@@ -87,6 +106,37 @@ const PaymentForm = ({ clientSecret, onSuccess, onCancel }: PaymentFormProps) =>
       setIsProcessing(false);
     }
   };
+
+  // If payment succeeded but lease creation failed, show retry UI
+  if (paymentSucceededButLeaseFailed) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-amber-800 mb-2">
+            <CheckCircle size={20} className="text-green-600" />
+            <span className="font-semibold">Payment Received</span>
+          </div>
+          <p className="text-sm text-amber-700">
+            Your payment was successful, but we encountered an issue creating your lease. Please
+            click below to retry. If the problem persists, contact support.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+            Close
+          </Button>
+          <Button
+            type="button"
+            onClick={onRetryLeaseCreation}
+            disabled={isRetryingLease}
+            className="flex-1 bg-primary-700 text-white hover:bg-primary-600"
+          >
+            {isRetryingLease ? 'Retrying...' : 'Retry Lease Creation'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -149,7 +199,12 @@ export const ApprovedTenantPayment = ({ propertyId }: ApprovedTenantPaymentProps
   const [createPaymentIntent, { isLoading: isCreatingIntent }] = useCreatePaymentIntentMutation();
   const [createInitialPaymentIntent, { isLoading: isCreatingInitialIntent }] =
     useCreateInitialPaymentIntentMutation();
-  const [completeInitialPayment] = useCompleteInitialPaymentMutation();
+  const [completeInitialPayment, { isLoading: isCompletingPayment }] =
+    useCompleteInitialPaymentMutation();
+
+  // Track when payment succeeded but lease creation failed
+  const [paymentSucceededButLeaseFailed, setPaymentSucceededButLeaseFailed] = useState(false);
+  const [confirmedPaymentIntentId, setConfirmedPaymentIntentId] = useState<string | null>(null);
 
   // Check for applications awaiting payment (manager approved, waiting for initial payment)
   const awaitingPaymentApplication = applications?.find(
@@ -211,6 +266,11 @@ export const ApprovedTenantPayment = ({ propertyId }: ApprovedTenantPaymentProps
     }
   };
 
+  const handlePaymentConfirmed = (paymentIntentId: string) => {
+    // Store the confirmed payment intent ID for potential retry
+    setConfirmedPaymentIntentId(paymentIntentId);
+  };
+
   const handlePaymentSuccess = async (paymentIntentId: string) => {
     if (isInitialPayment && currentApplicationId) {
       // Complete the initial payment and create lease
@@ -220,21 +280,72 @@ export const ApprovedTenantPayment = ({ propertyId }: ApprovedTenantPaymentProps
           stripePaymentId: paymentIntentId,
         }).unwrap();
 
-        // Refetch data to update the UI
+        // Success - refetch data and close modal
         refetchApplications();
         refetchLeases();
+
+        // Reset all state
+        setIsPaymentModalOpen(false);
+        setClientSecret(null);
+        setPaymentBreakdown(null);
+        setIsInitialPayment(false);
+        setCurrentApplicationId(null);
+        setPaymentSucceededButLeaseFailed(false);
+        setConfirmedPaymentIntentId(null);
       } catch (_error) {
-        toast.error(
-          'Payment was successful but there was an error finalizing the lease. Please contact support.'
-        );
+        // Payment succeeded but lease creation failed
+        // Keep modal open and show retry UI
+        setPaymentSucceededButLeaseFailed(true);
+        setConfirmedPaymentIntentId(paymentIntentId);
+        // Note: The mutation's onQueryStarted already shows the error toast
+      }
+    } else {
+      // For non-initial payments (monthly rent), just close
+      setIsPaymentModalOpen(false);
+      setClientSecret(null);
+      setPaymentBreakdown(null);
+      setIsInitialPayment(false);
+      setCurrentApplicationId(null);
+    }
+  };
+
+  const handleRetryLeaseCreation = async () => {
+    if (currentApplicationId && confirmedPaymentIntentId) {
+      try {
+        await completeInitialPayment({
+          applicationId: currentApplicationId,
+          stripePaymentId: confirmedPaymentIntentId,
+        }).unwrap();
+
+        // Success - refetch data and close modal
+        refetchApplications();
+        refetchLeases();
+
+        // Reset all state
+        setIsPaymentModalOpen(false);
+        setClientSecret(null);
+        setPaymentBreakdown(null);
+        setIsInitialPayment(false);
+        setCurrentApplicationId(null);
+        setPaymentSucceededButLeaseFailed(false);
+        setConfirmedPaymentIntentId(null);
+      } catch (_error) {
+        // Still failing - keep the retry UI visible
+        // The mutation's onQueryStarted already shows the error toast
       }
     }
+  };
 
-    setIsPaymentModalOpen(false);
-    setClientSecret(null);
-    setPaymentBreakdown(null);
-    setIsInitialPayment(false);
-    setCurrentApplicationId(null);
+  const handleModalClose = () => {
+    // Only allow closing if payment hasn't succeeded yet, or if lease creation succeeded
+    if (!paymentSucceededButLeaseFailed) {
+      setIsPaymentModalOpen(false);
+      setClientSecret(null);
+      setPaymentBreakdown(null);
+      setIsInitialPayment(false);
+      setCurrentApplicationId(null);
+      setConfirmedPaymentIntentId(null);
+    }
   };
 
   // Show awaiting payment UI (initial payment required)
@@ -306,7 +417,7 @@ export const ApprovedTenantPayment = ({ propertyId }: ApprovedTenantPaymentProps
         </div>
 
         {/* Payment Modal for Initial Payment */}
-        <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+        <Dialog open={isPaymentModalOpen} onOpenChange={(open) => !open && handleModalClose()}>
           <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -352,7 +463,11 @@ export const ApprovedTenantPayment = ({ propertyId }: ApprovedTenantPaymentProps
                   <PaymentForm
                     clientSecret={clientSecret}
                     onSuccess={handlePaymentSuccess}
-                    onCancel={() => setIsPaymentModalOpen(false)}
+                    onCancel={handleModalClose}
+                    onPaymentConfirmed={handlePaymentConfirmed}
+                    paymentSucceededButLeaseFailed={paymentSucceededButLeaseFailed}
+                    onRetryLeaseCreation={handleRetryLeaseCreation}
+                    isRetryingLease={isCompletingPayment}
                   />
                 </Elements>
               )}
@@ -416,7 +531,7 @@ export const ApprovedTenantPayment = ({ propertyId }: ApprovedTenantPaymentProps
       </div>
 
       {/* Payment Modal for Monthly Rent */}
-      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+      <Dialog open={isPaymentModalOpen} onOpenChange={(open) => !open && handleModalClose()}>
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -449,7 +564,7 @@ export const ApprovedTenantPayment = ({ propertyId }: ApprovedTenantPaymentProps
                 <PaymentForm
                   clientSecret={clientSecret}
                   onSuccess={handlePaymentSuccess}
-                  onCancel={() => setIsPaymentModalOpen(false)}
+                  onCancel={handleModalClose}
                 />
               </Elements>
             )}
