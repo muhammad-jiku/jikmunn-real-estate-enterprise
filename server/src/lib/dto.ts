@@ -95,9 +95,9 @@ export function toPrivateUserDTO(user: Manager | Tenant): PrivateUserDTO {
 }
 
 // Manager-specific DTO with contact info (for property listings)
-// Note: cognitoId is intentionally stripped for security
 export interface ManagerContactDTO {
   id: number;
+  cognitoId: string;
   name: string;
   email: string;
   phoneNumber: string;
@@ -106,6 +106,7 @@ export interface ManagerContactDTO {
 export function toManagerContactDTO(manager: Manager): ManagerContactDTO {
   return {
     id: manager.id,
+    cognitoId: manager.cognitoId,
     name: manager.name,
     email: manager.email,
     phoneNumber: manager.phoneNumber,

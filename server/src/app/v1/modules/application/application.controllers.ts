@@ -118,6 +118,7 @@ const listApplications = async (req: Request, res: Response): Promise<void> => {
       tenant: app.tenant
         ? {
             id: app.tenant.id,
+            cognitoId: app.tenant.cognitoId,
             name: app.tenant.name,
             email: app.tenant.email,
             phoneNumber: app.tenant.phoneNumber,
